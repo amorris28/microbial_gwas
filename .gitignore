@@ -1,0 +1,16 @@
+*.pdf
+*.log
+*.aux
+*.out
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.run.xml
+*.synctex.gz
+*.nav
+*.snm
+*.toc
+output/
+Figures/
