@@ -20,42 +20,44 @@ scale_com <- T
 scale_env <- T
 scale_spa <- T
 # File names
-input_tsv <- "output/cleaned_data.tsv"
+input_sep <- ","
+input_file <- "output/troph_total.csv"
 output_csv <- "output/adj_data.csv"
 com_output_csv <- 'output/com_adj_data.csv'
 env_output_csv <- 'output/env_adj_data.csv'
 spa_output_csv <- 'output/spa_adj_data.csv'
 # Function column names
-fun_cols <- c('CH4')
+fun_cols <- c('Low_final_k', 'Vmax')
 # Environment column names
-env_cols <- c('pH', 'Organic_Matter', 'P', 'S', 'Ca', 'Mg', 'Al', 'H_plus_Al_SMP', 
-              'Sum_of_bases', 'CEC', 'V', 'Al_saturation', 'B', 'Cu', 'Fe',
-              'Mn', 'Zn', 'N_total')
+env_cols <- c('WFPS', 'N_percent', 'C_percent')
 # Spatial column names
-spa_cols <- c('Lat', 'Long')
+spa_cols <- c('X', 'Y')
 # For community data, this assumes the ASV columns all start with 'asv'
 com_cols <- 'asv'
+# Extra grouping variables to preserve
+group_cols <- c('Sample', 'Wetland', 'Site')
 
-library(tidyverse)
+#library(tidyverse)
 library(vegan)
 
-all_data <- read_tsv(input_tsv)
+all_data <- read.table(input_file, header = TRUE, sep = input_sep)
 
-all_data <- all_data[complete.cases(all_data$Lat), ]
-all_data <- all_data[complete.cases(all_data$Long), ]
+all_data <- all_data[complete.cases(all_data[, spa_cols[1]]), ]
+all_data <- all_data[complete.cases(all_data[, spa_cols[2]]), ]
 
-asv_mat <- as.matrix(select(all_data, starts_with('asv')))
-
+non_asv_cols <- ncol(all_data[, !grepl( "asv" , names(all_data))])
+asv_mat <- as.matrix(all_data[, grepl( "asv" , names(all_data))])
 asv_mat[asv_mat > 0] <- 1
-dim(asv_mat)
 asv_mat <- asv_mat[, colSums(asv_mat) > 1]
-colSums(asv_mat)
+all_data <- cbind(all_data[, 1:non_asv_cols], 
+                  all_data[, colnames(asv_mat)])
 n_samples <- nrow(all_data)
 
 # Extract ASV table
-community <- select(all_data, starts_with(com_cols))
+community <- all_data[, grepl( "asv" , names(all_data))]
 com_mat <- t(community)
 
+# Initialize function vector
 func <- as.matrix(all_data[, fun_cols])
 
 func_adj <- func
@@ -103,12 +105,12 @@ for (i in 1:ncol(func)) {
 }
 
 # Recombine data
-func_adj_a <- as_tibble(func_adj)
-com_adj_a <- as_tibble(t(com_adj))
+func_adj_a <- as.data.frame(func_adj)
+com_adj_a <- as.data.frame(t(com_adj))
 new_data <- cbind(func_adj_a, com_adj_a)
 
 
-write_csv(new_data, com_output_csv)
+write.table(new_data, com_output_csv, sep = ",")
 }
 
 #### Correct for environmental similarity
@@ -129,12 +131,12 @@ for (i in 1:ncol(func)) {
 
 
 # Recombine data
-func_adj_a <- as_tibble(func_adj)
-com_adj_a <- as_tibble(t(com_adj))
+func_adj_a <- as.data.frame(func_adj)
+com_adj_a <- as.data.frame(t(com_adj))
 new_data <- cbind(func_adj_a, com_adj_a)
 
 
-write_csv(new_data, env_output_csv)
+write.table(new_data, env_output_csv, sep = ",")
 }
 #####
 
@@ -153,12 +155,12 @@ for (i in 1:ncol(func)) {
 }
 
 # Recombine data
-func_adj_a <- as_tibble(func_adj)
-com_adj_a <- as_tibble(t(com_adj))
+func_adj_a <- as.data.frame(func_adj)
+com_adj_a <- as.data.frame(t(com_adj))
 new_data <- cbind(func_adj_a, com_adj_a)
 
 
-write_csv(new_data, spa_output_csv)
+write.table(new_data, spa_output_csv, sep = ",")
 }
 if (com_bool & env_bool & spa_bool) {
 ## Community  
@@ -186,11 +188,11 @@ for (i in 1:ncol(func_adj)) {
   func_adj[, i] <- pc_adjust_vec(func_adj[, i], spa_aj, n_spa_axes) 
 }
 # Recombine data
-func_adj_a <- as_tibble(func_adj)
-com_adj_a <- as_tibble(t(com_adj))
-new_data <- cbind(func_adj_a, select(all_data, Land_type, Region), com_adj_a)
+func_adj_a <- as.data.frame(func_adj)
+com_adj_a <- as.data.frame(t(com_adj))
+new_data <- cbind(func_adj_a, all_data[, group_cols], com_adj_a)
 
 
-write_csv(new_data, output_csv)
+write.table(new_data, output_csv, sep = ",")
 }
 
