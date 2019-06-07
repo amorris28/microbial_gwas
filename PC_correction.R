@@ -53,13 +53,15 @@ all_data <- cbind(all_data[, 1:non_asv_cols],
 n_samples <- nrow(all_data)
 
 # Extract ASV table
-community <- all_data[, grepl( "asv" , names(all_data))]
+community <- as.matrix(all_data[, grepl( "asv" , names(all_data))])
 com_mat <- t(community)
 
 # Initialize function vector
-func <- as.matrix(all_data[, fun_cols])
+fun_mat <- as.matrix(all_data[, fun_cols])
 
-func_adj <- func
+fun_com <- cbind(fun_mat, community)
+class(fun_com)
+
 #### Functions
 
 pc_adjust_mat <- function(raw_mat, aj, n_axes) {
@@ -139,6 +141,8 @@ com_adj <- pc_adjust_mat(com_mat, com_aj, n_com_axes)
 # Function correction
 func_adj <- apply(func, 2, pc_adjust_vec, com_aj, n_com_axes) 
 func_adj2 <- pc_adjust_mat2(func, com_aj, n_com_axes) 
+com_adj2 <- pc_adjust_mat2(community, com_aj, n_com_axes) 
+all_adj <- pc_adjust_mat2(fun_com, com_aj, n_com_axes) 
 cbind(func_adj, func_adj2)
 sum(func_adj != func_adj2)
 # Recombine data
