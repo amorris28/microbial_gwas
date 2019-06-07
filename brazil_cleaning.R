@@ -1,7 +1,7 @@
 library(tidyverse)
 
 ## Cleaning up metadata
-metadata <- read_tsv('data/Dimensions_meta_data.txt')
+metadata <- read_tsv('data/brazil/Dimensions_meta_data.txt')
 metadata <- as.data.frame(metadata)
 ## Converting below detection limit to the detection limt
 ## Controversial decision - consider other options (zeros?)
@@ -14,7 +14,7 @@ metadata <- mutate_at(metadata, vars(pH:Error_N2O), as.numeric)
 as.data.frame(metadata)
 
 ## ASVs
-asvs <- read_tsv('data/16S_dada2_table_RDP_tax.txt')
+asvs <- read_tsv('data/brazil/16S_dada2_table_RDP_tax.txt')
 colnames(asvs)
 taxa_abund <- 
   asvs %>% 
@@ -22,7 +22,7 @@ taxa_abund <-
   select(-ConsensusLineage) %>% 
   gather(Sample_ID, Abundance, 2:75) %>% 
   spread(OTU_ID, Abundance)
-gps <- read.table('data/Dimensions_GPS_dec_deg.txt', header = FALSE)
+gps <- read.table('data/brazil/Dimensions_GPS_dec_deg.txt', header = FALSE)
 colnames(gps) <- c('Sample_ID', 'Lat', 'Long')
 
 all_data <-
@@ -31,4 +31,4 @@ all_data <-
   right_join(taxa_abund, by = 'Sample_ID')
 
 all_data$library_size <- rowSums(taxa_abund[, -1])
-write_tsv(all_data, 'output/cleaned_data.tsv')
+write_tsv(all_data, 'output/dim_cleaned_data.tsv')
