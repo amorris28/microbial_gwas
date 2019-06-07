@@ -18,3 +18,6 @@ including the ASV table, environmental metadata and lat long coordinates
 
 `combine_data.R` - Process Gabon data and combine into one data file including
 ASV table, environmental metadata, and lat long coordiantes
+
+`geodist_processing.R` - Takes Gabon lat long coordinates and converts them to
+meters in UTM
