@@ -1,7 +1,7 @@
 # Royal Society Paper
 
 ## Scripts
-`brazil_cleaning.R`
+`brazil_cleaning.R` - Process
 
 Processes data from Gabon and Brazil
 Performs variance partitioning
