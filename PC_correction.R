@@ -21,7 +21,7 @@ scale_spa <- T
 # File names
 input_sep <- ","
 input_file <- "output/troph_total.csv"
-output_folder <- "output/"
+output_file <- "output/gab_adj"
 # Function column names
 fun_cols <- c('Low_final_k', 'Vmax')
 # Environment column names
@@ -103,44 +103,45 @@ spa_pca <- rda(spa, scale = scale_spa)
 spa_aj <- summary(env_pca)$sites # pull out site scores, which represent
 ## the community similarity matrix (shared ancestry in GWAS language)
 }
+
 if (com_bool) {
 # Community correction
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
-write.table(all_adj, paste0(output_folder, 'com_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_com.tsv'))
 }
 
 if (env_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
-write.table(all_adj, paste0(output_folder, 'env_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_env.tsv'))
 }
 
 if (spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, spa_aj, n_spa_axes) 
-write.table(all_adj, paste0(output_folder, 'spa_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_spa.tsv'))
 }
 
 if (com_bool & env_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_folder, 'com_env_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_com_env.tsv'))
 }
 if (com_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_folder, 'com_spa_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_com_spa.tsv'))
 }
 if (env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_folder, 'env_spa_adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_env_spa.tsv'))
 }
 if (com_bool & env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_folder, 'adj_data.tsv'))
+write.table(all_adj, paste0(output_file, '_com_env_spa.tsv'))
 }
