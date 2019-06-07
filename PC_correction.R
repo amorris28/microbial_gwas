@@ -1,4 +1,3 @@
-
 #### Calculate community and environment similarity scores using PCA
 #### with the vegan::rda function. Then adjust the community matrix
 #### and ecosystem function rates by correcting for the regression
@@ -78,6 +77,21 @@ pc_adjust_mat <- function(raw_mat, aj, n_axes) {
   }
   return(raw_mat)
 }
+pc_adjust_mat2 <- function(raw_mat, aj, n_axes) {
+  # com_mat is the community matrix
+  # aj is the matrix of site scores from PCA
+  # n_axes is the number of PC axes to correct by
+  gamma <- vector(length = nrow(raw_mat))
+	for (p in 1:n_axes) {
+    a <- aj[, p] # select axis n for correction
+    for (i in 1:ncol(raw_mat)) { # adjust each taxon abundance
+      tax <- raw_mat[, i] # select taxon abundances for j samples
+      gamma[i] <- sum(a * tax)/sum(a^2) # calculate gamma (regression coef)
+      raw_mat[, i] <- tax - gamma[i] * a 
+    }
+  }
+  return(raw_mat)
+}
 pc_adjust_vec <- function(raw_vec, aj, n_axes) {
   for (p in 1:n_axes) {
     a <- aj[, p]
@@ -97,22 +111,7 @@ com_pca <- rda(community, scale = scale_com) # Calculate covariance matrix
 com_aj <- summary(com_pca)$sites # pull out site scores, which represent
 # the community similarity matrix (shared ancestry in GWAS language)
 # for community similarity predicting genotype
-com_adj <- pc_adjust_mat(com_mat, com_aj, n_com_axes) 
-
-# Same correction as the com matrix now for vector of low final k
-for (i in 1:ncol(func)) {
-  func_adj[, i] <- pc_adjust_vec(func[, i], com_aj, n_com_axes) 
 }
-
-# Recombine data
-func_adj_a <- as.data.frame(func_adj)
-com_adj_a <- as.data.frame(t(com_adj))
-new_data <- cbind(func_adj_a, com_adj_a)
-
-
-write.table(new_data, com_output_csv, sep = ",")
-}
-
 #### Correct for environmental similarity
 if (env_bool) {
 	
@@ -123,12 +122,38 @@ env_pca <- rda(env, scale = scale_env)
 #screeplot(env_pca)
 env_aj <- summary(env_pca)$sites # pull out site scores, which represent
 # the community similarity matrix (shared ancestry in GWAS language)
-com_adj <- pc_adjust_mat(com_mat, env_aj, n_env_axes) 
+#####
+}
+if (spa_bool) {
+spa <- all_data[, spa_cols]
+# spa_aj <- as.matrix(spa_aj)
+##center_env <- data.frame(scale(env, scale = FALSE))
+spa_pca <- rda(spa, scale = scale_spa)
+#screeplot(spa_pca)
+spa_aj <- summary(env_pca)$sites # pull out site scores, which represent
+## the community similarity matrix (shared ancestry in GWAS language)
+}
+if (com_bool) {
+# Community correction
+com_adj <- pc_adjust_mat(com_mat, com_aj, n_com_axes) 
+# Function correction
+func_adj <- apply(func, 2, pc_adjust_vec, com_aj, n_com_axes) 
+func_adj2 <- pc_adjust_mat2(func, com_aj, n_com_axes) 
+cbind(func_adj, func_adj2)
+sum(func_adj != func_adj2)
+# Recombine data
+func_adj_a <- as.data.frame(func_adj)
+com_adj_a <- as.data.frame(t(com_adj))
+new_data <- cbind(func_adj_a, com_adj_a)
 
-for (i in 1:ncol(func)) {
-  func_adj[, i] <- pc_adjust_vec(func[, i], env_aj, n_env_axes) 
+
+write.table(new_data, com_output_csv, sep = ",")
 }
 
+if (env_bool) {
+com_adj <- pc_adjust_mat(com_mat, env_aj, n_env_axes) 
+
+func_adj <- apply(func, 2, pc_adjust_vec, env_aj, n_env_axes) 
 
 # Recombine data
 func_adj_a <- as.data.frame(func_adj)
@@ -138,22 +163,10 @@ new_data <- cbind(func_adj_a, com_adj_a)
 
 write.table(new_data, env_output_csv, sep = ",")
 }
-#####
-
 if (spa_bool) {
-spa <- all_data[, spa_cols]
-# spa_aj <- as.matrix(spa_aj)
-##center_env <- data.frame(scale(env, scale = FALSE))
-spa_pca <- rda(spa, scale = scale_spa)
-#screeplot(spa_pca)
-spa_aj <- summary(env_pca)$sites # pull out site scores, which represent
-## the community similarity matrix (shared ancestry in GWAS language)
 com_adj <- pc_adjust_mat(com_mat, spa_aj, n_spa_axes) 
 
-for (i in 1:ncol(func)) {
-  func_adj[, i] <- pc_adjust_vec(func[, i], spa_aj, n_spa_axes) 
-}
-
+func_adj <- apply(func, 2, pc_adjust_vec, spa_aj, n_spa_axes) 
 # Recombine data
 func_adj_a <- as.data.frame(func_adj)
 com_adj_a <- as.data.frame(t(com_adj))
@@ -168,25 +181,15 @@ if (com_bool & env_bool & spa_bool) {
 com_adj <- pc_adjust_mat(com_mat, com_aj, n_com_axes) 
 
 # Same correction as the com matrix now for vector of process rates
-for (i in 1:ncol(func)) {
-  func_adj[, i] <- pc_adjust_vec(func[, i], com_aj, n_com_axes) 
-}
-
+func_adj <- apply(func, 2, pc_adjust_vec, com_aj, n_com_axes) 
 ## Environment
 com_adj <- pc_adjust_mat(com_adj, env_aj, n_env_axes) 
 
-for (i in 1:ncol(func_adj)) {
-  func_adj[, i] <- pc_adjust_vec(func_adj[, i], env_aj, n_env_axes) 
-}
-
+func_adj <- apply(func_adj, 2, pc_adjust_vec, env_aj, n_env_axes) 
 ## Spatial
-
 com_adj <- pc_adjust_mat(com_adj, spa_aj, n_spa_axes) 
 
-
-for (i in 1:ncol(func_adj)) {
-  func_adj[, i] <- pc_adjust_vec(func_adj[, i], spa_aj, n_spa_axes) 
-}
+func_adj <- apply(func_adj, 2, pc_adjust_vec, spa_aj, n_spa_axes) 
 # Recombine data
 func_adj_a <- as.data.frame(func_adj)
 com_adj_a <- as.data.frame(t(com_adj))
@@ -196,3 +199,8 @@ new_data <- cbind(func_adj_a, all_data[, group_cols], com_adj_a)
 write.table(new_data, output_csv, sep = ",")
 }
 
+pc_correction <- function(com_mat, func_mat) {
+  com_adj <- pc_adjust_mat(com_mat, com_aj, n_com_axes) 
+  func_adj <- apply(func, 2, pc_adjust_vec, com_aj, n_com_axes) 
+
+}
