@@ -2,65 +2,67 @@ library(tidyverse)
 library(varComp)
 library(vegan)
 library(broom)
-source('R/misc_functions.R')
+library(amorris)
 
+asv_table <- read.csv('output/asv_table.csv')
 
-asv_table <- read_csv('output/asv_table.csv')
+### Plot ASV abundances
+#i = 2
+#j = ncol(asv_table)
+#  asv_table[, c(1, i:j)] %>% 
+#  gather(ASV, ABU, 2:ncol(asv_table[, c(1, i:j)])) %>% 
+#ggplot(aes(y = ABU, x = ASV)) +
+#  geom_jitter()  
 
-i = 2
-j = ncol(asv_table)
-  asv_table[, c(1, i:j)] %>% 
-  gather(ASV, ABU, 2:ncol(asv_table[, c(1, i:j)])) %>% 
-ggplot(aes(y = ABU, x = ASV)) +
-  geom_jitter()  
-
-
+## Remove ASVs only present in 1 sample
 asvs <- asv_table[, -1] 
-## Presence Absence
 asvs[asvs>0] <- 1
-asv_table[, -1] <- asvs
+asvs <- as.matrix(asvs)
+asv_table <- asv_table[rowSums(asvs) > 1, ]
 asv_mat <- as.matrix(asv_table[, 2:ncol(asv_table)])
-ColVar <- function(x, ...) {
-  colSums((x - colMeans(x, ...))^2, ...)/(dim(x)[2] - 1)
-}
 
-asv_mat_var <- ColVar(asv_mat)
-asv_mat_high_var<-asv_mat[,log10(asv_mat_var) > 0]
-ncol(asv_mat_high_var)
-plot(density(log10(asv_mat_var)))
-rowSums(asv_mat)
-colSums(asv_mat)
-asv_mat_ns <- asv_mat[, colSums(asv_mat) > 1]
+### High variance ASVs
+#ColVar <- function(x, ...) {
+#  colSums((x - colMeans(x, ...))^2, ...)/(dim(x)[2] - 1)
+#}
+#asv_mat_var <- ColVar(asv_mat)
+#asv_mat_high_var<-asv_mat[,log10(asv_mat_var) > 0]
+#ncol(asv_mat_high_var)
+#plot(density(log10(asv_mat_var)))
+#rowSums(asv_mat)
+#colSums(asv_mat)
+#asv_mat_ns <- asv_mat[, colSums(asv_mat) > 1]
+#colSums(asv_mat_ns)
 
-colSums(asv_mat_ns)
-taxon <- asv_mat_high_var[, 3]
-com_dissim <- vegdist(asv_mat_high_var[, -3])
+# Community similarity
+taxon <- asv_mat[, 3]
+com_dissim <- vegdist(asv_mat[, -3])
 com_dissim <- as.matrix(com_dissim)
 com_sim <- 1-com_dissim
 
 
-troph_attr_table <- read_csv('output/troph_attr_table.csv')
+troph_attr_table <- read.csv('output/troph_attr_table.csv', stringsAsFactors = F)
+str(troph_attr_table)
 troph_attr_table$Site <- paste0(troph_attr_table$Site, 
 				reverse_substr(troph_attr_table$Sample, 3, 3))
+# Function
 lowk <- troph_attr_table$Low_final_k
 
-
+# Geographic similarity
 geodist <- read.table('output/geodist.tsv')
 troph_attr_table <- left_join(troph_attr_table, geodist, by = "Site")
 xy <- troph_attr_table[, c('X', 'Y')]
-xy <- scale(xy)
-geo_dist <- dist(as.matrix(xy))
-geo_dist <- as.matrix(geo_dist)
-geo_sim <-max(geo_dist) - geo_dist
+geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
+geo_sim <- 1/(1+geo_dis)
 
+# environmental dissimilarity
 env <- select(troph_attr_table, WFPS, N_percent, C_percent)
-env <- scale(env)
-env_dissim <- dist(as.matrix(env))
-env_dissim <- as.matrix(env_dissim)
-env_sim <- max(env_dissim) - env_dissim
+env_dis <- as.matrix(dist(as.matrix(scale(env))))
+env_sim <- 1/(1+env_dis)
 
 model <- varComp(lowk ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
 summary(model)
+
 for (i in 11:20) {
   taxon <- asv_mat_ns[, i]
   com_sim <- 1- as.matrix(vegdist(asv_mat_ns[, -i]))

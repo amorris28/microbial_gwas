@@ -22,7 +22,6 @@ asv_mat <- as.matrix(asv_table)
 all_data <- all_data[rowSums(asv_mat) > 1, ]
 all_data <- cbind(all_data[, 1:39], all_data[, colnames(asv_mat[, colSums(asv_mat) > 1])])
 all_data[1:nrow(all_data), 1:ncol(all_data)]
-all_data
 
 ### Plot ASV abundances
 #
