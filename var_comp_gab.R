@@ -60,8 +60,25 @@ env <- select(troph_attr_table, WFPS, N_percent, C_percent)
 env_dis <- as.matrix(dist(as.matrix(scale(env))))
 env_sim <- 1/(1+env_dis)
 
+
 model <- varComp(lowk ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
 summary(model)
+# Zero residual variance association with community similarity
+
+mantel(com_sim, geo_sim)
+qplot(x = xy$X, y = xy$Y)
+# Community and geography are correlated and sites cluster around three locations
+troph_attr_table[troph_attr_table$Y > 30000, 'geocode'] <- 'A'
+troph_attr_table[troph_attr_table$Y < 30000 & troph_attr_table$Y > 10000, 'geocode'] <- 'B'
+troph_attr_table[troph_attr_table$Y < 10000, 'geocode'] <- 'C'
+troph_attr_table$geocode
+qplot(x = xy$X, y = xy$Y) + geom_point(aes(color = troph_attr_table$geocode))
+sample <- troph_attr_table$Sample
+model <- varComp(Low_final_k ~ taxon, 
+                 data = troph_attr_table, 
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+
 
 for (i in 11:20) {
   taxon <- asv_mat_ns[, i]

@@ -9,11 +9,10 @@ library(amorris)
 ## Import and organize data
 
 all_data <- read.table('output/dim_cleaned_data.tsv', header = TRUE)
-class(all_data)
 #all_data <- fread('output/dim_cleaned_data.tsv')
-all_data[1:nrow(all_data), 1:40]
-colnames(all_data[, 1:40])
-sum(is.na(all_data))
+#all_data[1:nrow(all_data), 1:40]
+#colnames(all_data[, 1:40])
+#sum(is.na(all_data))
 all_data <- all_data[complete.cases(all_data$Lat), ]
 all_data <- all_data[complete.cases(all_data$Long), ]
 asv_table <- select(all_data, starts_with("asv"))
@@ -21,7 +20,7 @@ asv_table[asv_table>0] <- 1 # Presence/Absence
 asv_mat <- as.matrix(asv_table)
 all_data <- all_data[rowSums(asv_mat) > 1, ]
 all_data <- cbind(all_data[, 1:39], all_data[, colnames(asv_mat[, colSums(asv_mat) > 1])])
-all_data[1:nrow(all_data), 1:ncol(all_data)]
+#all_data[1:nrow(all_data), 1:ncol(all_data)]
 
 ### Plot ASV abundances
 #
@@ -60,7 +59,7 @@ com_sim <- 1-com_dissim
 
 # Methane flux response variable
 CH4 <- all_data$CH4
-
+hist(CH4)
 # Calculate geographic similarity from lat/long
 xy <- all_data[, c('Lat', 'Long')]
 geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
