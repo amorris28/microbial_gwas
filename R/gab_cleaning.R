@@ -1,11 +1,10 @@
 
 library(tidyverse)
-
-source('R/misc_functions.R')
+library(amorris)
 
 # Import ------------------------------------------
-raw_troph_data <- read_tsv('data/Gabon_methanotrophy_table_scaled.txt')
-raw_gen_data <- read_tsv('data/Gabon_methanogenesis_table_scaled.txt')
+raw_troph_data <- read_tsv('../data/gabon/Gabon_methanotrophy_table_scaled.txt')
+raw_gen_data <- read_tsv('../data/gabon/Gabon_methanogenesis_table_scaled.txt')
 
 # Organize Methanotroph ------------------------------------------
 troph_data <- raw_troph_data %>% 
@@ -123,6 +122,6 @@ num_predictors <- gen_num_data %>% dplyr::select(-CH4, -H_CH4_percent)
 gen_attr_table <- gen_data %>% 
   select(-Rep, -Experiment, -Description, -Land_type, -Bulk_dens, -Mois_cont)
 
-write_csv(gen_attr_table, 'output/gen_attr_table.csv')
+write_csv(gen_attr_table, '../output/gab_gen_attr_table.csv')
 
-write_csv(troph_attr_table, 'output/troph_attr_table.csv')
+write_csv(troph_attr_table, '../output/gab_troph_attr_table.csv')

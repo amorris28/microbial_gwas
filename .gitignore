@@ -14,6 +14,7 @@
 *.toc
 output/
 Figures/
-.RData
-.Rhistory
+*.RData
+*.Rhistory
 .deps
+*.Rout
