@@ -2,8 +2,7 @@
 #### Output: troph_total.csv
 
 library(tidyverse)
-
-source('R/misc_functions.R')
+library(amorris)
 
 #gen_attr_table <- read_csv('output/gen_attr_table.csv')
 
@@ -28,7 +27,7 @@ troph_asv_table <- read_csv('output/rare_asv_table.csv')
 geodist <- read.table('output/geodist.tsv')
 troph_attr_table <- left_join(troph_attr_table, geodist, by = "Site")
 troph_attr_table <- left_join(troph_attr_table, troph_asv_table, by = "Sample")
-  write_csv(troph_attr_table, 'output/troph_total.csv')
+  write_csv(troph_attr_table, '../output/gab_troph_total.csv')
 
 # gen_attr_table %>% 
 # left_join(asv_table, by = "Sample") %>%

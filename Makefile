@@ -1,8 +1,8 @@
 
-main.pdf: main.tex
-	latexmk -pdf -M -MP -MF $*.deps $<
+manuscript/main.pdf: manuscript/main.tex
+	cd $(@D); latexmk -pdf -M -MP -MF $*.deps $(<F)
 
 clean-latex:
-	latexmk -C
+	cd manuscript; latexmk -C
 
 -include *.deps
