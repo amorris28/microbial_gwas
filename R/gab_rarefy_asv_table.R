@@ -4,9 +4,13 @@ library(amorris)
 # Import ASV table
 asv_table <- read.csv('../output/gab_asv_table.csv')
 
-comm_mat <- as.matrix(asv_table[, -1])
+# Check library size
+rowSums(as.matrix(asv_table[, -1]))
 
-hist(rowSums(comm_mat))
+# Remove two samples with shallow sequencing depth
+asv_table <- asv_table[rowSums(as.matrix(asv_table[, -1])) > 10000, ]
+
+comm_mat <- as.matrix(asv_table[, -1])
 
 samples <- tibble(Sample = asv_table$Sample)
 
