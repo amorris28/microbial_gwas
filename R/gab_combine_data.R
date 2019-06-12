@@ -3,11 +3,11 @@ library(amorris)
 
 #gen_attr_table <- read_csv('../output/gab_gen_attr_table.csv')
 
-troph_attr_table <- read_csv('../output/gab_troph_attr_table.csv')
+troph_attr_table <- read.csv('../output/gab_troph_attr_table.csv', stringsAsFactors=F)
 troph_attr_table$Site <- paste0(troph_attr_table$Site, 
 				reverse_substr(troph_attr_table$Sample, 3, 3))
 ## Rarefied ASV Table
-troph_asv_table <- read_csv('../output/rare_asv_table.csv')
+troph_asv_table <- read.csv('../output/gab_rare_asv_table.csv')
 
 ## DESeq2 variance stabilized asv table
 # troph_asv_table <- read_csv('../output/vst_asv_table.csv')
@@ -23,8 +23,8 @@ troph_asv_table <- read_csv('../output/rare_asv_table.csv')
 #  write_csv('output/troph_total.csv')
 geodist <- read.table('../output/geodist.tsv')
 troph_attr_table <- left_join(troph_attr_table, geodist, by = "Site")
-troph_attr_table <- left_join(troph_attr_table, troph_asv_table, by = "Sample")
-  write_csv(troph_attr_table, '../output/gab_troph_total.csv')
+troph_attr_table <- right_join(troph_attr_table, troph_asv_table, by = "Sample")
+write_csv(troph_attr_table, '../output/gab_troph_total.csv')
 
 # gen_attr_table %>% 
 # left_join(asv_table, by = "Sample") %>%

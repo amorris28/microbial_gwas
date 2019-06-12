@@ -4,7 +4,7 @@ library(vegan)
 library(broom)
 library(amorris)
 
-asv_table <- read.csv('output/asv_table.csv')
+asv_table <- read.csv('../output/gab_asv_table.csv')
 
 ### Plot ASV abundances
 #i = 2
@@ -41,15 +41,14 @@ com_dissim <- as.matrix(com_dissim)
 com_sim <- 1-com_dissim
 
 
-troph_attr_table <- read.csv('output/troph_attr_table.csv', stringsAsFactors = F)
-str(troph_attr_table)
+troph_attr_table <- read.csv('../output/troph_attr_table.csv', stringsAsFactors = F)
 troph_attr_table$Site <- paste0(troph_attr_table$Site, 
 				reverse_substr(troph_attr_table$Sample, 3, 3))
 # Function
 lowk <- troph_attr_table$Low_final_k
 
 # Geographic similarity
-geodist <- read.table('output/geodist.tsv')
+geodist <- read.table('../output/geodist.tsv')
 troph_attr_table <- left_join(troph_attr_table, geodist, by = "Site")
 xy <- troph_attr_table[, c('X', 'Y')]
 geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
