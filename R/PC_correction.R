@@ -6,6 +6,8 @@
 #### similarity, and phenotype ~ environmental similarity
 #### See: Price et al. 2006 in Nature Genetics
 
+library(vegan)
+source('functions.R')
 # Whether to correct by each factor
 com_bool <- T
 env_bool <- T
@@ -20,8 +22,8 @@ scale_env <- T
 scale_spa <- T
 # File names
 input_sep <- ","
-input_file <- "output/troph_total.csv"
-output_file <- "output/gab_adj"
+input_file <- "../output/gab_troph_total.csv"
+output_file <- "../output/gab_adj"
 # Function column names
 fun_cols <- c('Low_final_k', 'Vmax')
 # Environment column names
@@ -33,7 +35,6 @@ com_cols <- 'asv'
 # Extra grouping variables to preserve
 group_cols <- c('Sample', 'Wetland', 'Site')
 
-library(vegan)
 
 all_data <- read.table(input_file, header = TRUE, sep = input_sep)
 
@@ -55,22 +56,6 @@ com_mat <- as.matrix(all_data[, grepl(com_cols, names(all_data))])
 fun_mat <- as.matrix(all_data[, fun_cols])
 fun_com <- cbind(fun_mat, com_mat)
 
-#### Functions
-pc_adjust_mat <- function(raw_mat, aj, n_axes) {
-  # raw_mat is the matrix of function and community
-  # aj is the matrix of site scores from PCA
-  # n_axes is the number of PC axes to correct by
-  gamma <- vector(length = nrow(raw_mat))
-	for (p in 1:n_axes) {
-    a <- aj[, p] # select axis n for correction
-    for (i in 1:ncol(raw_mat)) { # adjust each taxon abundance
-      tax <- raw_mat[, i] # select taxon abundances for j samples
-      gamma[i] <- sum(a * tax)/sum(a^2) # calculate gamma (regression coef)
-      raw_mat[, i] <- tax - gamma[i] * a 
-    }
-  }
-  return(raw_mat)
-}
 
 ### Community similarity correction
 if (com_bool) {
