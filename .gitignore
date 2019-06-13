@@ -18,3 +18,4 @@ Figures/
 *.Rhistory
 .deps
 *.Rout
+tables/

@@ -92,41 +92,43 @@ spa_aj <- summary(env_pca)$sites # pull out site scores, which represent
 if (com_bool) {
 # Community correction
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
-write.table(all_adj, paste0(output_file, '_com.tsv'))
+write.table(all_adj, paste0(output_file, '_c.tsv'))
 }
 
 if (env_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
-write.table(all_adj, paste0(output_file, '_env.tsv'))
+write.table(all_adj, paste0(output_file, '_e.tsv'))
 }
 
 if (spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, spa_aj, n_spa_axes) 
-write.table(all_adj, paste0(output_file, '_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_s.tsv'))
 }
 
 if (com_bool & env_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_env.tsv'))
+write.table(all_adj, paste0(output_file, '_ce.tsv'))
 }
 if (com_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_cs.tsv'))
 }
 if (env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_env_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_es.tsv'))
 }
 if (com_bool & env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_env_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_ces.tsv'))
 }
+
+write.table(all_data, paste0(output_file, '_raw.tsv'))

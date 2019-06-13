@@ -55,3 +55,18 @@ by_asv %>%
   ylim(0, 10)  %>% 
   return()
 }
+# Identify ASVs with -log(p value) > 
+id_asvs <- function(model_output, alpha = 0.05/nrow(model_output)) {
+lowk_asvs <- model_output %>% 
+  mutate(tidy = map(model, broom::tidy)) %>% 
+  unnest(tidy) %>% 
+  filter(term == 'abund') %>% 
+  filter(-log10(p.value) > -log10(alpha)) %>% 
+  pull(asv)
+}
+
+# Pull out taxonomy for significant taxa
+id_taxonomy <- function(sig_asvs, taxon_table) {
+  taxon_table %>% 
+    filter(asv %in% sig_asvs) 
+}
