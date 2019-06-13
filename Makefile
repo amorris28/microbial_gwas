@@ -3,6 +3,11 @@ R_OPTS=--no-save --no-restore --no-init-file --no-site-file
 manuscript/main.pdf: manuscript/main.tex
 	cd $(<D); latexmk -pdf -M -MP -MF $*.deps $(<F)
 
+tables/sig_taxa%: R/id_taxa.R
+	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
+
+R/id_taxa.R: output/lowk_fits%.rds
+
 output/lowk_fits%.rds: R/gab_lm_model.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 

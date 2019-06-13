@@ -4,9 +4,9 @@ library(amorris)
 source('functions.R')
 
 # import model output
-temp <- list.files(path="../output", pattern="lowk_fits*", full.names = TRUE)
+temp <- list.files(path="../output", pattern="fits*", full.names = TRUE)
 all_models <- sapply(temp, readRDS, simplify = FALSE, USE.NAMES = TRUE)
-names(all_models) <- reverse_substr(substr(names(all_models), 21, 27), 5, 8)
+names(all_models) <- reverse_substr(substr(names(all_models), 16, 27), 5, 12)
 
 taxon_table <- read_csv('../output/taxon_table.csv')
 
@@ -20,5 +20,4 @@ lapply(asvs, length)
 sig_taxa <- lapply(asvs, id_taxonomy, taxon_table) 
 
 # Save taxa
-sapply(names(sig_taxa), 
- function (x) write.table(sig_taxa[[x]], file = paste0('../tables/sig_taxa_', x, ".txt")))
+sapply(names(sig_taxa), function (x) write.table(sig_taxa[[x]], file = paste0('../tables/sig_taxa_', x, ".txt")))
