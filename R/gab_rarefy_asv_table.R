@@ -5,10 +5,10 @@ library(amorris)
 asv_table <- read.csv('../output/gab_asv_table.csv')
 
 # Check library size
-rowSums(as.matrix(asv_table[, -1]))
+sort(rowSums(as.matrix(asv_table[, -1])))
 
 # Remove two samples with shallow sequencing depth
-asv_table <- asv_table[rowSums(as.matrix(asv_table[, -1])) > 10000, ]
+asv_table <- asv_table[rowSums(as.matrix(asv_table[, -1])) > 12000, ]
 
 comm_mat <- as.matrix(asv_table[, -1])
 

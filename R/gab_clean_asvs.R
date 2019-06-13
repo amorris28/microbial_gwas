@@ -20,12 +20,12 @@ write_csv(taxon_table, '../output/gab_taxon_table.csv')
 wide_asv <- asv_table %>% 
   mutate(asv = paste('asv', OTU_ID, sep = "_")) %>% 
   select(asv, starts_with('dna')) %>% 
-  select(asv, ends_with('MO')) %>% 
   gather(Sample, abund, 2:length(.)) %>% 
   spread(asv, abund) %>% 
   mutate(Sample = substring(Sample, 5))
 
 # Remove zero abundance taxa and NA taxa
 wide_asv <- wide_asv[, colSums(wide_asv != 0, na.rm = T) > 0]
+dim(wide_asv)
 
 write_csv(wide_asv, '../output/gab_asv_table.csv')
