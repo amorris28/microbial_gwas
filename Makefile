@@ -16,13 +16,23 @@ R/gab_lm_model.R: output/gab_adj%.tsv
 output/gab_adj%.tsv: R/PC_correction.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
+output/gab_total%.csv: R/gab_combine_data.R
+	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
+
+R/gab_combine_data.R: output/geodist.tsv output/gab_rare_asv_table.csv output/gab_gen_attr_table.csv output/gab_troph_attr_table.csv
+
+output/geodist.tsv: R/geodist_processing.R
+	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
+
 output/gab_troph_attr_table.csv output/gab_gen_attr_table.csv: R/gab_cleaning.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
-output/gab_asv_table.csv: R/gab_clean_asvs.R
+output/gab_rare_asv_table.csv: R/rarefy_asv_table.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
-output/gab_rare_asv_table.csv: R/rarefy_asv_table.R
+R/rarefy_asv_table.R: output/gab_asv_table.csv
+
+output/gab_asv_table.csv: R/gab_clean_asvs.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
 clean: 
