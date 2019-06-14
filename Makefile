@@ -16,7 +16,9 @@ R/gab_lm_model.R: output/gab_adj%.tsv
 output/gab_adj%.tsv: R/PC_correction.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
-output/gab_total%.csv: R/gab_combine_data.R
+R/PC_correction.R: output/gab_all%.csv
+
+output/gab_all%.csv: R/gab_combine_data.R
 	cd $(<D);R CMD BATCH $(R_OPTS) $(<F)
 
 R/gab_combine_data.R: output/geodist.tsv output/gab_rare_asv_table.csv output/gab_gen_attr_table.csv output/gab_troph_attr_table.csv
