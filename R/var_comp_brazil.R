@@ -8,7 +8,7 @@ library(amorris)
 
 ## Import and organize data
 
-all_data <- read.table('output/dim_cleaned_data.tsv', header = TRUE)
+all_data <- read.table('../output/dim_cleaned_data.tsv', header = TRUE)
 #all_data <- fread('output/dim_cleaned_data.tsv')
 #all_data[1:nrow(all_data), 1:40]
 #colnames(all_data[, 1:40])
@@ -73,7 +73,7 @@ env_sim <- 1/(1+env_dis)
 
 model <- varComp(CH4 ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
 summary(model)
-
+CH4
 
 for (i in 11:20) {
   taxon <- asv_mat_ns[, i]

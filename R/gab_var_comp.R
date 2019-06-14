@@ -4,8 +4,8 @@ library(vegan)
 library(broom)
 library(amorris)
 
-asv_table <- read.csv('../output/gab_asv_table.csv')
-
+all_data <- read.csv('../output/gab_all_rare_troph.csv')
+dim(all_data)
 ### Plot ASV abundances
 #i = 2
 #j = ncol(asv_table)
@@ -15,7 +15,7 @@ asv_table <- read.csv('../output/gab_asv_table.csv')
 #  geom_jitter()  
 
 ## Remove ASVs only present in 1 sample
-asvs <- asv_table[, -1] 
+asvs <- select(all_data, 
 asvs[asvs>0] <- 1
 asvs <- as.matrix(asvs)
 asv_table <- asv_table[rowSums(asvs) > 1, ]
