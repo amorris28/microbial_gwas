@@ -28,6 +28,7 @@ geodist <- read.table('../output/geodist.tsv')
 # Export
 troph_total_rare <- left_join(troph_attr_table, geodist, by = "Site")
 troph_total_rare <- inner_join(troph_total_rare, rare_asv_table, by = "Sample")
+troph_total_rare <- troph_total_rare[troph_total_rare$Wetland == 'Upland', ]
 write_csv(troph_total_rare, '../output/gab_all_rare_troph.csv')
 
 gen_total_rare <- left_join(gen_attr_table, geodist, by = "Site")
