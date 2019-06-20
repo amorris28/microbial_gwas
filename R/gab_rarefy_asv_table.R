@@ -1,8 +1,9 @@
 library(tidyverse)
-library(amorris)
+library(morris)
 
 # Import ASV table
 asv_table <- read.csv('../output/gab_asv_table.csv')
+dim(asv_table)
 
 # Check library size
 sort(rowSums(as.matrix(asv_table[, -1])))
@@ -19,4 +20,3 @@ rare_mat <- rarefy_mean(comm_mat, n = 1000)
 rare_asv <- cbind(samples, as_tibble(rare_mat))
 
 write_csv(rare_asv, '../output/gab_rare_asv_table.csv')
-

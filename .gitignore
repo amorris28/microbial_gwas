@@ -19,3 +19,5 @@ Figures/
 .deps
 *.Rout
 tables/
+R/Figs/
+*.html

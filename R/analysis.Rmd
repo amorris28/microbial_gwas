@@ -6,6 +6,10 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+# Overview
+
+This is the primary analysis script for the analysis associated with the Royal Society
+paper. 
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
@@ -19,6 +23,104 @@ library(lubridate)
 library(broom)
 library(broman)
 library(morris)
+library(varComp)
+library(vegan)
+
 ```
 
-Words
+```{r import_data}
+
+all_data <- read.csv('../output/gab_all_rare_troph.csv', stringsAsFactors = FALSE)
+
+```
+
+
+# Variance Component Analysis
+
+```{r sim_mat}
+
+## Remove ASVs only present in 1 sample
+asvs <- as.matrix(all_data[, grep("^asv", colnames(all_data))])
+asvs[asvs>0] <- 1
+all_data <- all_data[rowSums(asvs) > 1, ]
+asv_mat <- as.matrix(all_data[, grep("^asv", colnames(all_data))])
+
+dim(asvs) - dim(asv_mat)
+rowSums(asvs)
+
+# Community similarity
+asv <- 3
+taxon <- asv_mat[, asv]
+#com_dis <- as.matrix(dist(as.matrix(scale(asv_mat[, -asv]))))
+#com_sim <- 1/(1+com_dis)
+com_sim <- 1 - as.matrix(vegdist(asv_mat[, -asv]))
+
+env_variables <- all_data[, 1:8]
+
+# Function
+lowk <- all_data$Low_final_k
+
+
+# Geographic similarity
+xy <- all_data[, c('X', 'Y')]
+geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
+geo_sim <- 1/(1+geo_dis)
+
+# environmental dissimilarity
+wetland <- all_data[, "Wetland"]
+env <- all_data[, c('WFPS', 'N_percent', 'C_percent')]
+env_dis <- as.matrix(dist(as.matrix(scale(env))))
+env_sim <- 1/(1+env_dis)
+
+```
+
+```{r varcomp_diagnostics}
+
+mantel(com_sim, geo_sim)
+qplot(x = xy$X, y = xy$Y) + geom_jitter(aes(color = all_data$Wetland))
+
+ggplot(mapping = aes(lowk)) + 
+  geom_histogram(bins = 20) + 
+  labs(x = "Low Final K", y = "Number of Samples")
+ggplot(mapping = aes(taxon)) + 
+  geom_histogram(bins = 20) + 
+  labs(x = "Taxon Abundance", y = "Number of Samples")
+
+all_data[all_data$Y > 30000, 'geocode'] <- 'A'
+all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
+all_data[all_data$Y < 10000, 'geocode'] <- 'C'
+all_data$geocode <- factor(all_data$geocode)
+
+ggplot(mapping = aes(c(com_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples")
+ggplot(mapping = aes(c(geo_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples")
+ggplot(mapping = aes(c(env_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples")
+
+```
+
+Community and geography are correlated and sites cluster around three locations
+Also, geography uses up more of the similarity matrix space (see histograms)
+Therefore, I coded geography as three factors (one for each cluster of sites)
+Also, wetland/upland covaries with those three sites, but moisture content is
+included in the environmental similarity matrix and should capture that variation
+
+```{r fit_var_comp}
+
+model <- varComp(lowk ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
+summary(model)
+
+model <- varComp(lowk ~ taxon + all_data$geocode, varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+levels(all_data$geocode)
+all_data$geocode <- factor(all_data$geocode, levels(all_data$geocode)[c(2,3,1)])
+model1 <- varComp(lowk ~ taxon + all_data$geocode, varcov = list(com = com_sim, env = env_sim) )
+summary(model1)
+
+```
+
+

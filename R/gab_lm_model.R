@@ -2,7 +2,7 @@ library(tidyverse)
 library(purrr)
 library(broom)
 library(modelr)
-library(amorris)
+library(morris)
 source('functions.R')
 
 # Import all model output
