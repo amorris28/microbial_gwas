@@ -111,8 +111,10 @@ summary(model1)
 
 anova(model, model2)
 anova(model)
-summary(model <- varComp(Low_final_k ~ taxon, data = all_data))
-summary(model2 <- varComp(Low_final_k ~ taxon + geocode, data = all_data))
+model <- varComp(Low_final_k ~ taxon, data = all_data)
+model2 <- varComp(Low_final_k ~ taxon + geocode, data = all_data)
+
+
 model <- varComp(Low_final_k ~ taxon, data = all_data,
                  varcov = list(env = env_sim))
 model <- varComp(Low_final_k ~ taxon, data = all_data,
