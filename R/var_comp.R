@@ -1,0 +1,142 @@
+#' ---
+#' title: "Royal Society paper"
+#' subtitle: "Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms"
+#' author: "Andrew Morris"
+#' date: "`r Sys.Date()`"
+#' output: html_document
+#' ---
+#' 
+#' # Overview
+#' 
+#' This is the primary analysis script for the analysis associated with the Royal Society
+#' paper. 
+
+#+ r global_options, include=FALSE
+knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+
+#+ r load_packages, include=FALSE
+
+library(tidyverse)
+library(lubridate)
+library(broom)
+library(broman)
+library(morris)
+library(varComp)
+library(vegan)
+
+#+ r import_data
+
+all_data <- read.csv('../output/gab_all_vst_troph.csv', stringsAsFactors = FALSE)
+
+#' # Variance Component Analysis
+
+#+ r sim_mat
+
+## Remove ASVs only present in 1 sample
+asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+asvs <- asvs[, colSums(asvs) > 0]
+all_data <- cbind(vars, asvs)
+
+# Community similarity
+asv <- 3
+taxon <- asvs[, asv]
+#com_dis <- as.matrix(dist(as.matrix(scale(asv_mat[, -asv]))))
+#com_sim <- 1/(1+com_dis)
+com_sim <- 1 - as.matrix(vegdist(asvs[, -asv]))
+
+# Geographic similarity
+xy <- all_data[, c('X', 'Y')]
+geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
+geo_sim <- 1/(1+geo_dis)
+
+# environmental dissimilarity
+env <- all_data[, c('WFPS', 'N_percent', 'C_percent')]
+env_dis <- as.matrix(dist(as.matrix(scale(env))))
+env_sim <- 1/(1+env_dis)
+
+all_data[all_data$Y > 30000, 'geocode'] <- 'A'
+all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
+all_data[all_data$Y < 10000, 'geocode'] <- 'C'
+all_data$geocode <- factor(all_data$geocode)
+
+#+ r varcomp_diagnostics
+
+mantel(com_sim, geo_sim)
+qplot(x = xy$X, y = xy$Y) + geom_point(aes(color = all_data$Wetland))
+qplot(x = xy$X, y = xy$Y) + geom_point(aes(color = all_data$geocode))
+
+ggplot(all_data, aes(Low_final_k)) + 
+  geom_histogram(bins = 20) + 
+  labs(x = "Low Final K", y = "Number of Samples")
+ggplot(all_data, aes(taxon)) + 
+  geom_histogram(bins = 20) + 
+  labs(x = "Taxon Abundance", y = "Number of Samples")
+
+
+ggplot(mapping = aes(c(com_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples")
+ggplot(mapping = aes(c(geo_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples")
+ggplot(mapping = aes(c(env_sim))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples")
+
+#'
+#'Community and geography are correlated and sites cluster around three locations
+#'Also, geography uses up more of the similarity matrix space (see histograms)
+#'Therefore, I coded geography as three factors (one for each cluster of sites)
+#'Also, wetland/upland covaries with those three sites, but moisture content is
+#'included in the environmental similarity matrix and should capture that variation
+
+#+ r fit_var_comp
+
+model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+
+model <- varComp(Low_final_k ~ taxon + geocode, data = all_data, 
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+
+levels(all_data$geocode)
+all_data$geocode <- factor(all_data$geocode, levels(all_data$geocode)[c(2,3,1)])
+model1 <- varComp(lowk ~ taxon + all_data$geocode, varcov = list(com = com_sim, env = env_sim) )
+summary(model1)
+
+
+
+anova(model, model2)
+anova(model)
+summary(model <- varComp(Low_final_k ~ taxon, data = all_data))
+summary(model2 <- varComp(Low_final_k ~ taxon + geocode, data = all_data))
+model <- varComp(Low_final_k ~ taxon, data = all_data,
+                 varcov = list(env = env_sim))
+model <- varComp(Low_final_k ~ taxon, data = all_data,
+                 varcov = list(com = com_sim))
+model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
+                 varcov = list(env = env_sim))
+model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
+                 varcov = list(com = com_sim))
+model <- varComp(Low_final_k ~ taxon, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+
+
+
+fit_varcomps <- function(x) {
+  print(x)
+  taxon <- asv_mat[, x]
+  com_sim <- 1 - as.matrix(vegdist(asv_mat[, -x]))
+  model <- varComp(Low_final_k ~ taxon + geocode, data = all_data, 
+                   varcov = list(com = com_sim, env = env_sim))
+  return(c(model$varComps, model$sigma2)/sum(c(model$varComps, model$sigma2)))
+}
+
+
+#system.time(suppressWarnings(mycomps <- lapply(seq(ncol(asv_mat[, 1:100])), fit_varcomps)))
+
