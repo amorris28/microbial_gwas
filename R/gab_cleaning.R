@@ -1,6 +1,6 @@
 
 library(tidyverse)
-library(amorris)
+library(morris)
 
 # Import ------------------------------------------
 raw_troph_data <- read_tsv('../data/gabon/Gabon_methanotrophy_table_scaled.txt')
@@ -17,7 +17,7 @@ troph_data <- raw_troph_data %>%
 
 # Add Wetland variable
 troph_data %<>% left_join(data_frame(Land_type = unique(troph_data$Land_type), 
-           Wetland = factor(c('Wetland', 'Upland', 'Upland', 'Wetland', 'Wetland',
+           Wetland = factor(c('Wetland', 'Upland', 'Upland', 'Wetland', 'Upland',
                               'Wetland', 'Upland', 'Upland', 'Upland'))), by = 'Land_type') %>% 
   select(Sample:Experiment, Wetland, Description:PC3_16S_rna)
 
@@ -121,6 +121,14 @@ num_predictors <- gen_num_data %>% dplyr::select(-CH4, -H_CH4_percent)
 # Attribute table
 gen_attr_table <- gen_data %>% 
   select(-Rep, -Experiment, -Description, -Land_type, -Bulk_dens, -Mois_cont)
+
+# Remove extraneous attributes
+colnames(gen_attr_table)
+gen_attr_table <- gen_attr_table %>% 
+  select(Site:Copies)
+colnames(troph_attr_table)
+troph_attr_table <- troph_attr_table %>% 
+  select(Sample:pmoa_transcript_num)
 
 write_csv(gen_attr_table, '../output/gab_gen_attr_table.csv')
 
