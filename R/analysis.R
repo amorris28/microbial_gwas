@@ -3,13 +3,11 @@
 #' subtitle: "Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms"
 #' author: "Andrew Morris"
 #' date: "`r Sys.Date()`"
-#' output: html_document
+#' output: 
+#'   html_document:
+#'     number_sections: TRUE
 #' ---
 #' 
-#' # Overview
-#' 
-#' This is the primary analysis script for the analysis associated with the Royal Society
-#' paper. 
 
 #+ r global_options, include=FALSE
 knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
@@ -29,12 +27,48 @@ library(parallel)
 #library(qvalue)
 library(knitr)
 library(kableExtra)
+library(eulerr)
 num.cores <- detectCores()
 #+ r import_data
 
 all_data <- as.data.frame(data.table::fread('../output/gab_all_vst_troph.csv'))
+n_samp <- nrow(all_data)
+n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 
+#' # Overview
+#' 
+#' The goal of this project is to answer the question: is microbial community 
+#' composition important for determining ecosystem-scale function independent 
+#' of the underlying environmental variation? To address this, I partitioned
+#' variation between community and environment (while controlling for geographic
+#' location using site as a factor). I also identified taxa that are significantly
+#' correlated with function after accounting for the covariance of geography,
+#' environment, and community similarity. Currently, significant taxa are identified
+#' using the Bonferroni correction (with the number of non-independent tests equal
+#' to the number of taxa included in each model). Eventually, I would like to
+#' determine p.values using a permutation test.
+#'
+#' These data were collected from Gabon, Africa and include `r n_samp` samples
+#' and `r n_asvs` ASVs from the DADA2 pipeline. The community matrix was transformed
+#' using the `varianceStabilizingTransformation` from `DESeq2`.
+#' This analysis only includes high affinity
+#' methane oxidation measurements (Low Final K). The spatial data were converted
+#' from latitude/longitude to distance in meters by converting to UTM. 
+#' Environmental data include bulk density, soil moisture, percent nitrogen, and 
+#' percent carbon.
+#'
 #' # Variance Component Analysis
+#' 
+#' This analysis fits linear mixed-effects models using the `varComp` package
+#' version `r packageVersion('varComp')`. The fixed effect portion of each model
+#'  is `Low final K ~ taxon abundance + location` with random effect
+#' variance-covariance matrices for community similarity (from Bray-Curtis
+#' distance) and environmental similarity (Euclidean distance) with all variables
+#' centered and scaled to unit variance before calculating similarity metrics.
+#' 
+#' For each set of analyses (all data, wetland data, and upland data) asvs were
+#' subset to include only asvs present in more than one sample (so those only present
+#' in zero samples or one sample were removed).
 
 #+ r sim_mat
 
@@ -49,10 +83,11 @@ asvs <- asvs[, colSums(asvs) > 0]
 all_data <- cbind(vars, asvs)
 
 # Community similarity
-asv <- 3
-taxon <- asvs[, asv]
-colnames(asvs)[asv]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -c(asv)]))
+
+x <- 3
+asv <- asvs[, x]
+asv_tax <- colnames(asvs)[x]
+com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)]))
 
 # Geographic similarity
 geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
@@ -66,43 +101,64 @@ all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
 all_data[all_data$Y < 10000, 'geocode'] <- 'C'
 all_data$geocode <- factor(all_data$geocode)
 
+
+#' ## Model diagnostics for all data
+
 #+ r varcomp_diagnostics
 
-mantel(com_sim, geo_sim)
-ggplot(all_data, aes(x = X, y = Y)) + geom_point(aes(color = all_data$Wetland))
-ggplot(all_data, aes(x = X, y = Y)) + geom_point(aes(color = all_data$geocode))
+varcomp_diag <- function(data) {
+print(mantel(com_sim, geo_sim))
 
-ggplot(all_data, aes(Low_final_k)) + 
+print(ggplot(data, aes(x = X, y = Y)) + 
+  geom_point(aes(color = data$Wetland)) +
+  labs(title = "Distribution of sites highlighted by wetland or upland"))
+print(ggplot(data, aes(x = X, y = Y)) + 
+  geom_point(aes(color = data$geocode)) +
+  labs(title = "Distribution of sites highlighted by site code"))
+
+print(ggplot(data, aes(Low_final_k)) + 
   geom_histogram(bins = 20) + 
-  labs(x = "Low Final K", y = "Number of Samples")
-ggplot(all_data, aes(taxon)) + 
+  labs(x = "Low Final K", y = "Number of Samples"))
+print(ggplot(data, aes(asv)) + 
   geom_histogram(bins = 20) + 
-  labs(x = "Taxon Abundance", y = "Number of Samples")
+  labs(x = "Taxon Abundance", y = "Number of Samples",
+  title = paste0('Abundance of ', asv_tax)))
 
 
-ggplot(mapping = aes(c(com_sim))) + 
+print(ggplot(mapping = aes(c(com_sim))) + 
   geom_histogram(binwidth = 0.05) + 
-  labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples")
-ggplot(mapping = aes(c(geo_sim))) + 
+  labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples"))
+print(ggplot(mapping = aes(c(geo_sim))) + 
   geom_histogram(binwidth = 0.05) + 
-  labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples")
-ggplot(mapping = aes(c(env_sim))) + 
+  labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples"))
+print(ggplot(mapping = aes(c(env_sim))) + 
   geom_histogram(binwidth = 0.05) + 
-  labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples")
+  labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples"))
 
-#'
-#'Community and geography are correlated and sites cluster around three locations
-#'Also, geography uses up more of the similarity matrix space (see histograms)
-#'Therefore, I coded geography as three factors (one for each cluster of sites)
-#'Also, wetland/upland covaries with those three sites, but moisture content is
-#'included in the environmental similarity matrix and should capture that variation
-
-#+ r fit_var_comp
-
-
-model <- varComp(Low_final_k ~ taxon, data = all_data,
+model <- varComp(Low_final_k ~ asv, data = data,
                  varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
 summary(model)
+}
+
+varcomp_diag(all_data)
+
+#' ## Geographic Correlated with Community Composition
+#'
+#' Community and geography are correlated as demonstrated by the Mantel test for
+#' the community similarity matrix and the geographic similarity matrix (see Mantel test output). 
+#' Even after variance stabilization, the community similarity metric is skewed
+#' towards one end of the variance space while geography uses up more of the 
+#' similarity matrix space (see histograms)
+#' Since sites are clustered around three locations,
+#' I coded geography as three factors (one for each cluster of sites)
+#'Also, wetland/upland covaries with those three sites, but moisture content is
+#'included in the environmental similarity matrix and should capture that variation
+#' To insure that the covariation between geographic site and wetland/upland
+#' isn't having a major influence on the results, I ran the models with all of the data
+#' and then again within wetland and within upland
+
+#+ r h2ge_attempt
+
 #
 #h2GE(all_data$Low_final_k, com_sim)
 #h2GE
@@ -133,57 +189,9 @@ summary(model)
 #anova(model)
 
 
+#' ## Model diagnostics for Wetland data
 
-calc_varcomp_per <- function(model) {
-  as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2],
-c(model$varComps, err = model$sigma2)/sum(c(model$varComps, model$sigma2)))))
-}
-
-fit_varComps <- function(x, all_data) {
-  print(x/ncol(asvs))
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
-parts <- NULL
-model <- varComp(Low_final_k ~ asv + geocode,
-                 data = all_data,
-                 varcov = list(com = com_sim, env = env_sim) )
-parts <- bind_cols(tibble(asv = asv_tax, comps = 'gce', geo = T), calc_varcomp_per(model))
-
-model <- varComp(Low_final_k ~ asv, data = all_data,
-                 varcov = list(com = com_sim, env = env_sim) )
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'ce', geo = F), calc_varcomp_per(model)))
-
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
-                 varcov = list(com = com_sim))
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'gc', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
-                 varcov = list(env = env_sim))
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'ge', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data,
-                 varcov = list(com = com_sim))
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'c', geo = F), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data,
-                 varcov = list(env = env_sim))
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'e', geo = F), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data)
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'g', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data)
-
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'n', geo = F), calc_varcomp_per(model)))
-parts
-}
-
-
-#system.time(my_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, mc.cores = num.cores)))))
-#write.csv(my_model_output, "../output/var_comp_out.csv")
-
-#+ fit_var_comp_wet
+#+ r varcomp_diagnostics_wet
 
 wet_data <- filter(all_data, Wetland == 'Wetland')
 
@@ -199,19 +207,15 @@ geo_sim <- calc_sim_matrix(wet_data[, c('X', 'Y')])
 # environmental similarity'
 env_sim <- calc_sim_matrix(wet_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-x <- 6
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 
-model <- varComp(Low_final_k ~ asv, data = wet_data,
-                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
-summary(model)
+varcomp_diag(wet_data)
 
-#system.time(wet_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = wet_data, mc.cores = num.cores)))))
-#write.csv(wet_model_output, "../output/var_comp_out_wet.csv")
+#' ## Model diagnostics for Upland data
 
-#+ fit_var_comp_dry
+#+ r varcomp_diagnostics_dry
 
 dry_data <- filter(all_data, Wetland == 'Upland')
 
@@ -227,18 +231,16 @@ geo_sim <- calc_sim_matrix(dry_data[, c('X', 'Y')])
 # environmental similarity'
 env_sim <- calc_sim_matrix(dry_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-x <- 1
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 
-model <- varComp(Low_final_k ~ asv, data = dry_data,
-                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
-summary(model)
-#system.time(dry_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = dry_data, mc.cores = num.cores)))))
-#write.csv(dry_model_output, "../output/var_comp_out_dry.csv")
 
-#+ analyze_model_output
+varcomp_diag(dry_data)
+
+#' # Analyze model output
+
+#+ r analyze_model_output
 
 
 
@@ -255,66 +257,70 @@ taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[
                           (length(r)-0)}
                                       ] }
        )
+
+#' ## Variance components
+
+#+ r variance_components
 my_model_output %>% 
   group_by(comps) %>% 
   summarize_at(vars(com, env, err), mean) %>% 
-  kable()
+  kable(caption = "Variance components for all data",
+        col.names = c('Components', 'Community', 'Environment', 'Error'),
+        digits = 2) %>% 
+  kable_styling()
 
 wet_model_output %>% 
   group_by(comps) %>% 
   summarize_at(vars(com, env, err), mean) %>% 
-  kable()
+  kable(caption = "Variance components for wetland data",
+        col.names = c('Components', 'Community', 'Environment', 'Error'),
+        digits = 2) %>% 
+  kable_styling()
 
 dry_model_output %>% 
   group_by(comps) %>% 
   summarize_at(vars(com, env, err), mean) %>% 
-  kable()
+  kable(caption = "Variance components for upland data",
+        col.names = c('Components', 'Community', 'Environment', 'Error'),
+        digits = 2) %>% 
+  kable_styling()
+
+#' ## Number of taxa identified with each covariate
+
+#+ r n_taxa_ided
 
 my_model_output %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(p.value <= 0.05 / length(unique(asv)))  %>% 
   summarize(count = length(unique(asv))) %>% 
-  kable()
+  kable(caption = "N taxa identified with all data",
+        col.names = c('Components', 'Count')) %>% 
+  kable_styling()
 
 wet_model_output %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(p.value <= 0.05 / length(unique(asv)))  %>% 
   summarize(count = length(unique(asv))) %>% 
-  kable()
+  kable(caption = "N taxa identified with wetland data",
+        col.names = c('Components', 'Count')) %>% 
+  kable_styling()
 
 dry_model_output %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(p.value <= 0.05 / length(unique(asv)))  %>% 
   summarize(count = length(unique(asv))) %>% 
-  kable()
+  kable(caption = "N taxa identified with upland data",
+        col.names = c('Components', 'Count')) %>% 
+  kable_styling()
 
-my_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(Phylum:Genus) %>% 
-  kable()
-wet_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(Phylum:Genus) %>% 
-  kable()
-dry_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps) %>% 
-  kable() %>% 
-  kable_styling() %>% 
-  collapse_rows(columns = 1)
+#' ## Taxa identified with each covariate
 
-library(eulerr)
 
+
+#+ r plot_shared_taxa
 plot_asv_euler <- function(model_output) {
 asvs <- 
 model_output %>% 
@@ -335,6 +341,52 @@ asvs <- list(
 plot(euler(asvs))
 }
 
+#' ### All Data Model
+
+#+ r all_taxa
+my_model_output  %>% 
+  left_join(taxon_table) %>% 
+group_by(comps) %>% 
+  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
+  select(Phylum:Genus) %>% 
+  arrange(comps) %>% 
+  kable() %>% 
+  kable_styling() %>% 
+  collapse_rows(columns = 1)
+
 plot_asv_euler(my_model_output)
+
+#' ### Wetland Model
+
+#+ r wetland_taxa
+
+wet_model_output  %>% 
+  left_join(taxon_table) %>% 
+group_by(comps) %>% 
+  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps) %>% 
+  kable() %>% 
+  kable_styling() #%>% 
+#  collapse_rows(columns = 1)
+
 plot_asv_euler(wet_model_output)
+
+#' ### Upland Model
+
+#+ r upland_taxa
+
+dry_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps) %>% 
+  kable() %>% 
+  kable_styling() %>% 
+  collapse_rows(columns = 1)
+
+
 plot_asv_euler(dry_model_output)
+
+sessionInfo()

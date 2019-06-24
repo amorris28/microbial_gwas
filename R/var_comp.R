@@ -1,42 +1,20 @@
-#' ---
-#' title: "Royal Society paper"
-#' subtitle: "Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms"
-#' author: "Andrew Morris"
-#' date: "`r Sys.Date()`"
-#' output: html_document
-#' ---
-#' 
-#' # Overview
-#' 
-#' This is the primary analysis script for the analysis associated with the Royal Society
-#' paper. 
-
-#+ r global_options, include=FALSE
-knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
-                      echo=FALSE, warning=FALSE, message=FALSE)
-
-#+ r load_packages, include=FALSE
+# load_packages, include=FALSE
 
 library(tidyverse)
-library(lubridate)
 library(broom)
-#library(broman)
-#library(morris)
 library(varComp)
 library(vegan)
-#library(gap)
 library(parallel)
-#library(qvalue)
-library(knitr)
-library(kableExtra)
+
 num.cores <- detectCores()
-#+ r import_data
+
+# import_data
 
 all_data <- as.data.frame(data.table::fread('../output/gab_all_vst_troph.csv'))
 
-#' # Variance Component Analysis
+# Variance Component Analysis
 
-#+ r sim_mat
+# sim_mat
 
 calc_sim_matrix <- function(x) {
 1/(1+as.matrix(dist(as.matrix(scale(x)))))
@@ -90,14 +68,14 @@ ggplot(mapping = aes(c(env_sim))) +
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples")
 
-#'
-#'Community and geography are correlated and sites cluster around three locations
-#'Also, geography uses up more of the similarity matrix space (see histograms)
-#'Therefore, I coded geography as three factors (one for each cluster of sites)
-#'Also, wetland/upland covaries with those three sites, but moisture content is
-#'included in the environmental similarity matrix and should capture that variation
+#
+#Community and geography are correlated and sites cluster around three locations
+#Also, geography uses up more of the similarity matrix space (see histograms)
+#Therefore, I coded geography as three factors (one for each cluster of sites)
+#Also, wetland/upland covaries with those three sites, but moisture content is
+#included in the environmental similarity matrix and should capture that variation
 
-#+ r fit_var_comp
+# fit_var_comp
 
 
 model <- varComp(Low_final_k ~ taxon, data = all_data,
@@ -179,9 +157,8 @@ parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'n', geo = F),
 parts
 }
 
-
-#system.time(my_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, mc.cores = num.cores)))))
-#write.csv(my_model_output, "../output/var_comp_out.csv")
+system.time(my_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, mc.cores = num.cores)))))
+write.csv(my_model_output, "../output/var_comp_out.csv")
 
 #+ fit_var_comp_wet
 
@@ -208,8 +185,8 @@ model <- varComp(Low_final_k ~ asv, data = wet_data,
                  varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
 summary(model)
 
-#system.time(wet_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = wet_data, mc.cores = num.cores)))))
-#write.csv(wet_model_output, "../output/var_comp_out_wet.csv")
+system.time(wet_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = wet_data, mc.cores = num.cores)))))
+write.csv(wet_model_output, "../output/var_comp_out_wet.csv")
 
 #+ fit_var_comp_dry
 
@@ -235,106 +212,6 @@ com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 model <- varComp(Low_final_k ~ asv, data = dry_data,
                  varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
 summary(model)
-#system.time(dry_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = dry_data, mc.cores = num.cores)))))
-#write.csv(dry_model_output, "../output/var_comp_out_dry.csv")
+system.time(dry_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = dry_data, mc.cores = num.cores)))))
+write.csv(dry_model_output, "../output/var_comp_out_dry.csv")
 
-#+ analyze_model_output
-
-
-
-taxon_table <- as.data.frame(data.table::fread('../output/taxon_table.csv'))
-my_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out.csv'))
-wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_wet.csv'))
-dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
-
-
-taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[ 
-                      if( any(is.na(r))){ 
-                          (which(is.na(r))[1]-1) 
-                       }else{
-                          (length(r)-0)}
-                                      ] }
-       )
-my_model_output %>% 
-  group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
-  kable()
-
-wet_model_output %>% 
-  group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
-  kable()
-
-dry_model_output %>% 
-  group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
-  kable()
-
-my_model_output %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
-  summarize(count = length(unique(asv))) %>% 
-  kable()
-
-wet_model_output %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
-  summarize(count = length(unique(asv))) %>% 
-  kable()
-
-dry_model_output %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
-  summarize(count = length(unique(asv))) %>% 
-  kable()
-
-my_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(Phylum:Genus) %>% 
-  kable()
-wet_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(Phylum:Genus) %>% 
-  kable()
-dry_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps) %>% 
-  kable() %>% 
-  kable_styling() %>% 
-  collapse_rows(columns = 1)
-
-library(eulerr)
-
-plot_asv_euler <- function(model_output) {
-asvs <- 
-model_output %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
-  select(comps, asv) %>% 
-  as.data.frame()
-asvs <- list(
-                 'g' = asvs[asvs$comps == 'g', 2],
-                 'c' = asvs[asvs$comps == 'c', 2],
-                 'e' = asvs[asvs$comps == 'e', 2],
-                 'n' = asvs[asvs$comps == 'n', 2],
-                 'gc' = asvs[asvs$comps == 'gc', 2],
-                 'ge' = asvs[asvs$comps == 'ge', 2],
-                 'ce' = asvs[asvs$comps == 'ce', 2],
-                 'gce' = asvs[asvs$comps == 'gce', 2]
-                 )
-plot(euler(asvs))
-}
-
-plot_asv_euler(my_model_output)
-plot_asv_euler(wet_model_output)
-plot_asv_euler(dry_model_output)
