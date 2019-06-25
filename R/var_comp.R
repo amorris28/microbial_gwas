@@ -1,16 +1,20 @@
-# load_packages, include=FALSE
 
 library(tidyverse)
 library(broom)
 library(varComp)
 library(vegan)
 library(parallel)
+library(foreach)
+library(doParallel)
+library(data.table)
 
 num.cores <- detectCores()
 
+registerDoParallel(cores = num.cores)
+
 # import_data
 
-all_data <- as.data.frame(data.table::fread('../output/gab_all_vst_troph.csv'))
+all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
 
 # Variance Component Analysis
 
@@ -44,121 +48,97 @@ all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
 all_data[all_data$Y < 10000, 'geocode'] <- 'C'
 all_data$geocode <- factor(all_data$geocode)
 
-#+ r varcomp_diagnostics
+## Permute response
+permute_no_replace <- function(perm_vec, nperm = 1000) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+foreach(i = seq_len(nperm), .combine = "cbind") %do% {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+}
+}
+permute_no_replace_par <- function(perm_vec, nperm = 1000) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+samples <- cbind(samples, truth = perm_vec)
+foreach(i = seq_len(nperm), .combine = "cbind") %dopar% {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+}
+}
 
-mantel(com_sim, geo_sim)
-ggplot(all_data, aes(x = X, y = Y)) + geom_point(aes(color = all_data$Wetland))
-ggplot(all_data, aes(x = X, y = Y)) + geom_point(aes(color = all_data$geocode))
+permute_no_replace_for <- function(perm_vec, nperm = 1000) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+samples <- cbind(samples, truth = perm_vec)
+for (i in seq_len(nperm)) {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+  colnames(samples)[i] <- paste0('perm.', i)
+}
+return(samples)
+}
+all_perm_lowk <- permute_no_replace_for(all_data$Low_final_k, nperm = 1000)
 
-ggplot(all_data, aes(Low_final_k)) + 
-  geom_histogram(bins = 20) + 
-  labs(x = "Low Final K", y = "Number of Samples")
-ggplot(all_data, aes(taxon)) + 
-  geom_histogram(bins = 20) + 
-  labs(x = "Taxon Abundance", y = "Number of Samples")
-
-
-ggplot(mapping = aes(c(com_sim))) + 
-  geom_histogram(binwidth = 0.05) + 
-  labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples")
-ggplot(mapping = aes(c(geo_sim))) + 
-  geom_histogram(binwidth = 0.05) + 
-  labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples")
-ggplot(mapping = aes(c(env_sim))) + 
-  geom_histogram(binwidth = 0.05) + 
-  labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples")
-
-#
-#Community and geography are correlated and sites cluster around three locations
-#Also, geography uses up more of the similarity matrix space (see histograms)
-#Therefore, I coded geography as three factors (one for each cluster of sites)
-#Also, wetland/upland covaries with those three sites, but moisture content is
-#included in the environmental similarity matrix and should capture that variation
-
-# fit_var_comp
-
-
-model <- varComp(Low_final_k ~ taxon, data = all_data,
-                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
-summary(model)
-#
-#h2GE(all_data$Low_final_k, com_sim)
-#h2GE
-#h2G(all_data$Low_final_k, com_sim)
-#h2G(all_data$Low_final_k, env_sim)
-#h2G(all_data$Low_final_k, geo_sim)
-#h2GE(c(model$varComps, model$sigma2))
-#h2GE
-#cov(c(model$varComps, model$sigma2))
-#
-#model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
-#                 varcov = list(com = com_sim, env = env_sim) )
-#anova(model)$`Pr(>F)`[2]
-#calc_varcomp_per(model)
-#
-#model <- varComp(Low_final_k ~ taxon + geocode, data = all_data, 
-#                 varcov = list(com = com_sim, env = env_sim) )
-#summary(model)
-#
-#levels(all_data$geocode)
-#all_data$geocode <- factor(all_data$geocode, levels(all_data$geocode)[c(2,3,1)])
-#model1 <- varComp(lowk ~ taxon + all_data$geocode, varcov = list(com = com_sim, env = env_sim) )
-#summary(model1)
-#
-#
-#
-#anova(model, model2)
-#anova(model)
-
-
+# Fit models
 
 calc_varcomp_per <- function(model) {
-  as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2],
+  as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2], F.value = anova(model)$`F value`[2],
 c(model$varComps, err = model$sigma2)/sum(c(model$varComps, model$sigma2)))))
 }
-
-fit_varComps <- function(x, all_data) {
-  print(x/ncol(asvs))
+fit_varComps <- function(x, y, all_data) {
+  print(paste0(x/ncol(asvs)*100, ' % of ASVs and ', y/ncol(perm_lowk)*100, ' % of permutations'))
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
+lowk <- perm_lowk[, y]
+n_perm <- colnames(perm_lowk)[y]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 parts <- NULL
-model <- varComp(Low_final_k ~ asv + geocode,
+model <- varComp(lowk ~ asv + geocode,
                  data = all_data,
                  varcov = list(com = com_sim, env = env_sim) )
-parts <- bind_cols(tibble(asv = asv_tax, comps = 'gce', geo = T), calc_varcomp_per(model))
+parts <- bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'gce'), calc_varcomp_per(model))
 
-model <- varComp(Low_final_k ~ asv, data = all_data,
+model <- varComp(lowk ~ asv, data = all_data,
                  varcov = list(com = com_sim, env = env_sim) )
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'ce', geo = F), calc_varcomp_per(model)))
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'ce'), calc_varcomp_per(model)))
 
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
+model <- varComp(lowk ~ asv + geocode, data = all_data,
                  varcov = list(com = com_sim))
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'gc', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'gc'), calc_varcomp_per(model)))
+model <- varComp(lowk ~ asv + geocode, data = all_data,
                  varcov = list(env = env_sim))
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'ge', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data,
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'ge'), calc_varcomp_per(model)))
+model <- varComp(lowk ~ asv, data = all_data,
                  varcov = list(com = com_sim))
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'c', geo = F), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data,
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'c'), calc_varcomp_per(model)))
+model <- varComp(lowk ~ asv, data = all_data,
                  varcov = list(env = env_sim))
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'e', geo = F), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv + geocode, data = all_data)
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'e'), calc_varcomp_per(model)))
+model <- varComp(lowk ~ asv + geocode, data = all_data)
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'g', geo = T), calc_varcomp_per(model)))
-model <- varComp(Low_final_k ~ asv, data = all_data)
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'g'), calc_varcomp_per(model)))
+model <- varComp(lowk ~ asv, data = all_data)
 
-parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, comps = 'n', geo = F), calc_varcomp_per(model)))
+parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'n'), calc_varcomp_per(model)))
 parts
 }
-
-system.time(my_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, mc.cores = num.cores)))))
-write.csv(my_model_output, "../output/var_comp_out.csv")
+perm_lowk <- all_perm_lowk
+system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %:% 
+  foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
+            suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
+                 })
+fwrite(results, "../output/var_comp_out_all.csv")
 
 #+ fit_var_comp_wet
 
@@ -171,22 +151,27 @@ asvs <- asvs[, colSums(asvs) > 0]
 wet_data <- cbind(vars, asvs)
 
 # Geographic similarity
-geo_sim <- calc_sim_matrix(wet_data[, c('X', 'Y')])
+#geo_sim <- calc_sim_matrix(wet_data[, c('X', 'Y')])
 
 # environmental similarity'
 env_sim <- calc_sim_matrix(wet_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-x <- 6
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
+#x <- 6
+#asv <- asvs[, x]
+#asv_tax <- colnames(asvs)[x]
+#com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
+#
+#model <- varComp(Low_final_k ~ asv, data = wet_data,
+#                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
+#summary(model)
 
-model <- varComp(Low_final_k ~ asv, data = wet_data,
-                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
-summary(model)
+perm_lowk <- all_perm_lowk[all_data$Wetland == 'Wetland', ]
 
-system.time(wet_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = wet_data, mc.cores = num.cores)))))
-write.csv(wet_model_output, "../output/var_comp_out_wet.csv")
+system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %:% 
+  foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
+            suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = wet_data)))
+                 })
+fwrite(results, "../output/var_comp_out_wet.csv")
 
 #+ fit_var_comp_dry
 
@@ -199,19 +184,23 @@ asvs <- asvs[, colSums(asvs) > 0]
 dry_data <- cbind(vars, asvs)
 
 # Geographic similarity
-geo_sim <- calc_sim_matrix(dry_data[, c('X', 'Y')])
+#geo_sim <- calc_sim_matrix(dry_data[, c('X', 'Y')])
 
 # environmental similarity'
 env_sim <- calc_sim_matrix(dry_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-x <- 1
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
+#x <- 1
+#asv <- asvs[, x]
+#asv_tax <- colnames(asvs)[x]
+#com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
+#
+#model <- varComp(Low_final_k ~ asv, data = dry_data,
+#                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
+#summary(model)
 
-model <- varComp(Low_final_k ~ asv, data = dry_data,
-                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
-summary(model)
-system.time(dry_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq(ncol(asvs)), fit_varComps, all_data = dry_data, mc.cores = num.cores)))))
-write.csv(dry_model_output, "../output/var_comp_out_dry.csv")
-
+perm_lowk <- all_perm_lowk[all_data$Wetland == 'Upland', ]
+system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %:% 
+  foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
+            suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = dry_data)))
+                 })
+fwrite(results, "../output/var_comp_out_dry.csv")
