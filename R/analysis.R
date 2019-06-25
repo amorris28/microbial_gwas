@@ -16,7 +16,7 @@ knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
 #+ r load_packages, include=FALSE
 
 library(tidyverse)
-library(lubridate)
+#library(lubridate)
 library(broom)
 #library(broman)
 #library(morris)
@@ -38,7 +38,7 @@ n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 #' # Overview
 #' 
 #' The goal of this project is to answer the question: is microbial community 
-#' composition important for determining ecosystem-scale function independent 
+#' composition important for determining the rate of ecosystem-scale functions independent 
 #' of the underlying environmental variation? To address this, I partitioned
 #' variation between community and environment (while controlling for geographic
 #' location using site as a factor). I also identified taxa that are significantly
@@ -139,16 +139,16 @@ model <- varComp(Low_final_k ~ asv, data = data,
                  varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
 summary(model)
 }
-
 varcomp_diag(all_data)
 
-#' ## Geographic Correlated with Community Composition
+#' ## Geography Correlated with Community Composition
 #'
 #' Community and geography are correlated as demonstrated by the Mantel test for
 #' the community similarity matrix and the geographic similarity matrix (see Mantel test output). 
 #' Even after variance stabilization, the community similarity metric is skewed
 #' towards one end of the variance space while geography uses up more of the 
-#' similarity matrix space (see histograms)
+#' similarity matrix space (see histograms). This results in geography
+#' explaining virtually all of the variation in ecosystem function.
 #' Since sites are clustered around three locations,
 #' I coded geography as three factors (one for each cluster of sites)
 #'Also, wetland/upland covaries with those three sites, but moisture content is
@@ -348,8 +348,8 @@ my_model_output  %>%
   left_join(taxon_table) %>% 
 group_by(comps) %>% 
   filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(Phylum:Genus) %>% 
-  arrange(comps) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
   kable() %>% 
   kable_styling() %>% 
   collapse_rows(columns = 1)
@@ -365,7 +365,7 @@ wet_model_output  %>%
 group_by(comps) %>% 
   filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
   select(comps, Phylum:Genus) %>% 
-  arrange(comps) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
   kable() %>% 
   kable_styling() #%>% 
 #  collapse_rows(columns = 1)
@@ -381,7 +381,7 @@ dry_model_output  %>%
   group_by(comps) %>% 
   filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
   select(comps, Phylum:Genus) %>% 
-  arrange(comps) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
   kable() %>% 
   kable_styling() %>% 
   collapse_rows(columns = 1)
