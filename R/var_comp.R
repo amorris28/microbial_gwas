@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(broom)
 library(varComp)
@@ -7,12 +6,12 @@ library(parallel)
 library(foreach)
 library(doParallel)
 library(data.table)
-
-num.cores <- detectCores()
-
-registerDoParallel(cores = num.cores)
-
-# import_data
+#library(doSNOW)
+#cl <- makeCluster(28, outfile = "")
+#registerDoParallel(cl)
+#registerDoSNOW(cl)
+#import_data
+registerDoParallel(cores = 28)
 
 all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
 
@@ -92,8 +91,9 @@ calc_varcomp_per <- function(model) {
   as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2], F.value = anova(model)$`F value`[2],
 c(model$varComps, err = model$sigma2)/sum(c(model$varComps, model$sigma2)))))
 }
+
 fit_varComps <- function(x, y, all_data) {
-  print(paste0(x/ncol(asvs)*100, ' % of ASVs and ', y/ncol(perm_lowk)*100, ' % of permutations'))
+  print(paste0(round(x/ncol(asvs)*100, 2), ' % of ASVs and ', round(y/ncol(perm_lowk)*100, 2), ' % of permutations'))
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
 lowk <- perm_lowk[, y]
@@ -134,12 +134,13 @@ parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps =
 parts
 }
 perm_lowk <- all_perm_lowk
-system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %:% 
+
+system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind', 
+                               .packages = c('vegan', 'varComp', 'tidyverse')) %:% 
   foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
             suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
                  })
 fwrite(results, "../output/var_comp_out_all.csv")
-
 #+ fit_var_comp_wet
 
 wet_data <- filter(all_data, Wetland == 'Wetland')
