@@ -28,12 +28,20 @@ library(parallel)
 library(knitr)
 library(kableExtra)
 library(eulerr)
+library(GGally)
 num.cores <- detectCores()
 #+ r import_data
 
+taxon_table <- as.data.frame(data.table::fread('../output/taxon_table.csv'))
 all_data <- as.data.frame(data.table::fread('../output/gab_all_vst_troph.csv'))
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
+
+## Remove ASVs only present in 1 sample
+asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+asvs <- asvs[, colSums(asvs) > 0]
+all_data <- cbind(vars, asvs)
 
 #' # Overview
 #' 
@@ -48,14 +56,140 @@ n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 #' to the number of taxa included in each model). Eventually, I would like to
 #' determine p.values using a permutation test.
 #'
-#' These data were collected from Gabon, Africa and include `r n_samp` samples
-#' and `r n_asvs` ASVs from the DADA2 pipeline. The community matrix was transformed
+#' These data were collected from Gabon, Africa and include `r n_samp` samples.
+#' Microbial community data include 16S rRNA gene sequences (only DNA not RNA/cDNA)
+#' with `r n_asvs` ASVs from the DADA2 pipeline. The community matrix was transformed
 #' using the `varianceStabilizingTransformation` from `DESeq2`.
 #' This analysis only includes high affinity
 #' methane oxidation measurements (Low Final K). The spatial data were converted
 #' from latitude/longitude to distance in meters by converting to UTM. 
 #' Environmental data include bulk density, soil moisture, percent nitrogen, and 
 #' percent carbon.
+#'
+#' # Overall Summary
+#'
+#' The traditional approach to microbial ecosystem function studies as I argue in the
+#' paper is to correlate some aspect of microbial biodiversity such as abundance,
+#' richness, diversity, or composition with the rate of an ecosystem function.
+#' This largely fails as demonstrated by the Rocca and Graham papers. Here I
+#' perform some of these analyses (PC regression, diversity, copy number/transcript
+#' number, and various environmental factors) and my results agree with them.
+#' Basically, the effectiveness of these hypotheses varies by function, but generally
+#' don't hold up looking across ecosystems. For Low_final_k, a phylogenetically
+#' conserved function (Martiny et al.) composition seems important. Although,
+#' I'm arguing methanotrophs might not be the important limiting factor so
+#' conservatism might not be important. Using PC regression, I identify some
+#' candidate taxa.
+#' 
+#' In the paper I argue that this problem is less analagous to traditional
+#' BEF literature where some variation in biodiversity is manipulated or 
+#' measured in the field. Generally the function of interest there is biomass or
+#' productivity at the community-level. In our case, we're sampling the
+#' natural variation in microbial community composition across a landscape that
+#' varies in environmental conditions and geographic distance between sites.
+#' In addition, the shared history and community interactions of a site
+#' could like to species associations unrelated to ecosystem function.
+#' Therefore, we need to take into account these covariates, just like in 
+#' GWAS studies.
+#'
+#' To that end, I use linear mixed-effects models to estimate the variance
+#' explained by community and environment and used location as a factor
+#' to control for variation among the clusters of sites. After including
+#' these covariates in the model, many of the taxa drop out. 
+#'
+#' # Traditional correlations
+
+#+ trad_correlations
+
+colnames(all_data[, 1:13])
+ggpairs(all_data[, 3:13])
+
+ggplot(all_data, aes(x = Vmax, y = Low_final_k)) + geom_point()
+
+ggplot(all_data, aes(x = pmoa_copy_num, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+summary(lm(Low_final_k ~ pmoa_copy_num, data = all_data))
+ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+summary(lm(Vmax ~ pmoa_copy_num, data = all_data))
+
+pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
+#screeplot(pca)
+#summary(pca)
+pc1 <- scores(pca)$sites[, 'PC1']
+pc2 <- scores(pca)$sites[, 'PC2']
+ggplot(all_data, aes(x = pc1, y = Low_final_k)) +
+       geom_point() +
+       geom_smooth(method = 'lm')
+summary(lm(Low_final_k ~ pc1, data = all_data))
+
+ggplot(all_data, aes(x = pc1, y = Vmax)) +
+       geom_point() +
+       geom_smooth(method = 'lm')
+summary(lm(Vmax ~ pc1, data = all_data))
+my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
+          score = scores(pca)$species[, 'PC1'])
+taxon_table  %>% 
+  left_join(my_asvs) %>% 
+  filter(abs(score) > 0.5) %>% 
+  kable(digits = 2) %>% 
+  kable_styling()
+
+ggplot(all_data, aes(x = pc2, y = Low_final_k)) +
+       geom_point() +
+       geom_smooth(method = 'lm')
+summary(lm(Low_final_k ~ pc2, data = all_data))
+
+ggplot(all_data, aes(x = Wetland, y = Low_final_k)) +
+       geom_boxplot() +
+       geom_jitter()
+summary(lm(Low_final_k ~ Wetland, data = all_data))
+
+ggplot(all_data, aes(x = Mois_cont, y = Low_final_k)) +
+       geom_point() +
+       geom_smooth(method = 'lm')
+summary(lm(Vmax ~ Mois_cont, data = all_data))
+com_matrix <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+richness <- rowSums(com_matrix > 0)
+shannon <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "shannon")
+simpson <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "simpson")
+ggplot(data = all_data, aes(x = richness, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+summary(lm(Low_final_k ~ richness, data = all_data))
+ggplot(data = all_data, aes(x = richness, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+summary(lm(Vmax ~ richness, data = all_data))
+
+ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+summary(lm(Low_final_k ~ shannon, data = all_data))
+ggplot(data = all_data, aes(x = shannon, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+tidy(lm(Vmax ~ shannon, data = all_data))
+
+ggplot(data = all_data, aes(x = simpson, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+tidy(lm(Low_final_k ~ simpson, data = all_data))
+ggplot(data = all_data, aes(x = simpson, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+tidy(lm(Vmax ~ simpson, data = all_data))
+#'
+#' ## Summary of correlations
+#'
+#' There is a significant, but marginal difference between wetland and upland sites.
+#' Vmax appears more strongly correlated with edaphic properties (moisture, nitrogen,
+#' bulk density, carbon) and abundance than Low_final_k. In contrast, Low_final_k is
+#' more strongly correlated with composition in the form of PC axis 1. Neither process
+#' is correlated with species richness or diversity. 
+#' 
 #'
 #' # Variance Component Analysis
 #' 
@@ -76,11 +210,6 @@ calc_sim_matrix <- function(x) {
 1/(1+as.matrix(dist(as.matrix(scale(x)))))
 }
 
-## Remove ASVs only present in 1 sample
-asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
-asvs <- asvs[, colSums(asvs) > 0]
-all_data <- cbind(vars, asvs)
 
 # Community similarity
 
@@ -189,9 +318,17 @@ varcomp_diag(all_data)
 #anova(model)
 
 
-#' ## Model diagnostics for Wetland data
+# ## Model diagnostics for Wetland data
 
-#+ r varcomp_diagnostics_wet
+#+ cor_using_varcomp
+is.na(all_data$pmoa_copy_num)
+fake_data <- all_data
+fake_data$pmoa_copy_num[is.na(all_data$pmoa_copy_num )] <- mean(all_data$pmoa_copy_num, na.rm = T)
+model <- varComp(Low_final_k ~ pmoa_copy_num + geocode,
+                 data = fake_data, na.action = na.exclude,
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+#+ r varcomp_diagnostics_wet, eval=FALSE
 
 wet_data <- filter(all_data, Wetland == 'Wetland')
 
@@ -213,9 +350,9 @@ com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 
 varcomp_diag(wet_data)
 
-#' ## Model diagnostics for Upland data
+# ## Model diagnostics for Upland data
 
-#+ r varcomp_diagnostics_dry
+#+ r varcomp_diagnostics_dry, eval=FALSE
 
 dry_data <- filter(all_data, Wetland == 'Upland')
 
@@ -244,7 +381,6 @@ varcomp_diag(dry_data)
 
 
 
-taxon_table <- as.data.frame(data.table::fread('../output/taxon_table.csv'))
 my_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out.csv'))
 wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_wet.csv'))
 dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
