@@ -1,5 +1,6 @@
 library(tidyverse)
 library(DESeq2)
+library(data.table)
 
 ## Cleaning up metadata
 metadata <- read_tsv('../data/brazil/Dimensions_meta_data.txt')
@@ -14,6 +15,18 @@ metadata <- as_tibble(metadata)
 metadata <- mutate_at(metadata, vars(pH:Error_N2O), as.numeric)
 ## ASVs
 asvs <- as.data.frame(data.table::fread('../data/brazil/16S_dada2_table_RDP_tax.txt'))
+
+# Pull out taxonomy
+taxon_table <- 
+  asvs %>% 
+  select(OTU_ID, ConsensusLineage) %>% 
+  mutate(OTU_ID = paste('asv', OTU_ID, sep = "_")) %>% 
+  select(asv = OTU_ID, ConsensusLineage) %>% 
+  separate(ConsensusLineage, c('Domain', 'Phylum', 'Class', 'Order', 'Family',
+                               'Genus', 'Species', 'Subspecies'), ";")
+fwrite(taxon_table, '../output/brazil_taxon_table.csv')
+
+# Pull out abundances and do variance stabilizing transformation
 asvs <-
   asvs %>% 
   select(-ConsensusLineage)
