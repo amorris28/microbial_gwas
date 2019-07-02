@@ -29,7 +29,14 @@ library(knitr)
 library(kableExtra)
 library(eulerr)
 library(GGally)
+library(phyloseq)
+library(doParallel)
+library(gap)
 num.cores <- detectCores()
+registerDoParallel(cores = 3)
+
+#+ r tree_analysis
+tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
 #+ r import_data
 
 taxon_table <- as.data.frame(data.table::fread('../output/taxon_table.csv'))
@@ -524,5 +531,45 @@ dry_model_output  %>%
 
 
 plot_asv_euler(dry_model_output)
+
+#+ phylo_tree
+colnames(asvs) <- substr(colnames(asvs), 5, nchar(colnames(asvs)[1]))
+otu_table <- otu_table(asvs, taxa_are_rows = FALSE)
+phylo_object <- phyloseq(otu_table, tree)
+unifrac <- UniFrac(phylo_object, TRUE)
+uni_sim <- 1/(1+as.matrix(unifrac))
+ggplot(mapping = aes(c(uni_sim))) +
+  geom_histogram(bins = 20)
+
+model <- varComp(Low_final_k ~ 1, data = all_data,
+                 varcov = list(uni = uni_sim, com = com_sim) )
+summary(model)
+h2 <- h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
+var_comps_se <- data.frame(comp = c('uni', 'com'), h2 = c(h2$h2G, h2$h2GE), 
+           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
+
+ggplot(mapping = aes(x = c(com_sim), y = c(uni_sim))) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
+model <- varComp(Low_final_k ~ 1, data = all_data,
+                 varcov = list(com = uni_sim) )
+summary(model)
+
+h2G(c(model$varComps['com'], err = model$sigma2), vcov(model, what = 'varComp'))
+
+model <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = uni_sim) )
+summary(model)
+
+h2G(c(model$varComps['com'], err = model$sigma2), vcov(model, what = 'varComp'))
+
+model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
+                 varcov = list(com = uni_sim, env = env_sim) )
+summary(model)
+vcov(model, what = 'varComp')
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
 
 sessionInfo()
