@@ -533,6 +533,19 @@ dry_model_output  %>%
 plot_asv_euler(dry_model_output)
 
 #+ phylo_tree
+
+x <- 3
+asv <- asvs[, x]
+asv_tax <- colnames(asvs)[x]
+com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)]))
+
+# Geographic similarity
+geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
+
+# environmental similarity'
+env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
+asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+asv <- asvs[, x]
 colnames(asvs) <- substr(colnames(asvs), 5, nchar(colnames(asvs)[1]))
 otu_table <- otu_table(asvs, taxa_are_rows = FALSE)
 phylo_object <- phyloseq(otu_table, tree)
@@ -541,14 +554,6 @@ uni_sim <- 1/(1+as.matrix(unifrac))
 ggplot(mapping = aes(c(uni_sim))) +
   geom_histogram(bins = 20)
 
-model <- varComp(Low_final_k ~ 1, data = all_data,
-                 varcov = list(uni = uni_sim, com = com_sim) )
-summary(model)
-h2 <- h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
-var_comps_se <- data.frame(comp = c('uni', 'com'), h2 = c(h2$h2G, h2$h2GE), 
-           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
-ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
-  geom_pointrange() 
 
 ggplot(mapping = aes(x = c(com_sim), y = c(uni_sim))) +
   geom_point() +
@@ -568,8 +573,14 @@ h2G(c(model$varComps['com'], err = model$sigma2), vcov(model, what = 'varComp'))
 
 model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
                  varcov = list(com = uni_sim, env = env_sim) )
+all_data$geocode
+class(uni_sim)
 summary(model)
 vcov(model, what = 'varComp')
-h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
+h2 <- h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
 
+var_comps_se <- data.frame(comp = c('uni', 'env'), h2 = c(h2$h2G, h2$h2GE), 
+           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
 sessionInfo()

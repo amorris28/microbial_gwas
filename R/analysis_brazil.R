@@ -432,5 +432,15 @@ group_by(comps) %>%
 
 #plot_asv_euler(my_model_output)
 
+model <- varComp(log_CH4_c ~ asv + Region + Land_type, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+vcov(model, what = 'varComp')
+h2 <- h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
+
+var_comps_se <- data.frame(comp = c('com', 'env'), h2 = c(h2$h2G, h2$h2GE), 
+           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
 
 sessionInfo()
