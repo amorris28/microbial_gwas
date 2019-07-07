@@ -40,7 +40,7 @@ num_predictors <- troph_num_data %>% dplyr::select(-Vmax, -Low_final_k)
 
 # Attribute table
 troph_attr_table <- troph_data %>% 
-  select(-Rep, -Experiment, -Description, -Land_type)
+  select(-Rep, -Experiment, -Description)
 
 # Organizing attribute table for easy lmer
 atr_tbl_long <- troph_attr_table %>% 
@@ -121,7 +121,7 @@ num_predictors <- gen_num_data %>% dplyr::select(-CH4, -H_CH4_percent)
 
 # Attribute table
 gen_attr_table <- gen_data %>% 
-  select(-Rep, -Experiment, -Description, -Land_type)
+  select(-Rep, -Experiment, -Description)
 
 # Remove extraneous attributes
 colnames(gen_attr_table)
