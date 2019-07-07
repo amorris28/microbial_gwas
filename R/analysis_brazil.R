@@ -27,13 +27,16 @@ library(parallel)
 #library(qvalue)
 library(knitr)
 library(kableExtra)
-library(eulerr)
-library(GGally)
+#library(eulerr)
+#library(GGally)
+library(gap)
+library(lmtest)
+
 num.cores <- detectCores() - 1
 #+ r import_data
 
-taxon_table <- as.data.frame(data.table::fread('../output/brazil_taxon_table.csv'))
-all_data <- as.data.frame(data.table::fread('../output/brazil_cleaned_data.tsv'))
+taxon_table <- data.table::fread('../output/brazil_taxon_table.csv', data.table = FALSE)
+all_data <- data.table::fread('../output/brazil_cleaned_data.tsv', data.table = FALSE)
 all_data <- all_data[!is.na(all_data$Long), ]
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
@@ -109,16 +112,16 @@ all_data <- cbind(vars, asvs)
 #+ trad_correlations, fig.width=10, fig.height=10
 
 colnames(all_data[, 1:40])
-ggcorr(all_data[, c(2:3, 8:34, 36, 38)], nbreaks = 4, label = TRUE)
+#ggcorr(all_data[, c(2:3, 8:34, 36, 38)], nbreaks = 4, label = TRUE)
 
 #+ other_correlations
-
-log_CH4_c <- with(all_data, log(CH4 + abs(min(CH4)) + 1))
+all_data$log_CH4_c <- with(all_data, log(CH4 + abs(min(CH4)) + 1))
 pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
 screeplot(pca)
-#summary(pca)
-pc1 <- scores(pca)$sites[, 'PC1']
-pc2 <- scores(pca)$sites[, 'PC2']
+
+all_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+all_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+all_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
 
 ggplot(all_data, aes(x = pc1, y = CH4)) +
        geom_point() +
@@ -160,21 +163,42 @@ ggplot(all_data, aes(x = pc2, y = N2O)) +
        geom_smooth(method = 'lm')
 summary(lm(N2O ~ pc2, data = all_data))
 
-my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
-          score = scores(pca)$species[, 'PC1'])
-taxon_table  %>% 
-  left_join(my_asvs) %>% 
-  filter(abs(score) > 0.6) %>% 
-  kable(digits = 2) %>% 
-  kable_styling()
+#my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
+#          score = scores(pca)$species[, 'PC1'])
+#taxon_table  %>% 
+#  left_join(my_asvs) %>% 
+#  filter(abs(score) > 0.6) %>% 
+#  kable(digits = 2) %>% 
+#  kable_styling()
+#
+#my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC2']),
+#          score = scores(pca)$species[, 'PC2'])
+#taxon_table  %>% 
+#  left_join(my_asvs) %>% 
+#  filter(abs(score) > 0.5) %>% 
+#  kable(digits = 2) %>% 
+#  kable_styling()
+env_data <- select(all_data, pH:N_total)
+is.na(env_data)
+env_pca <- rda(env_data, na.action = na.exclude, scale = TRUE)
+screeplot(env_pca)
+env_pca
+all_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+all_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+all_data$env_pc3 <- scores(env_pca, choices = 3, display = 'sites', scaling = 3)
 
-my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC2']),
-          score = scores(pca)$species[, 'PC2'])
-taxon_table  %>% 
-  left_join(my_asvs) %>% 
-  filter(abs(score) > 0.5) %>% 
-  kable(digits = 2) %>% 
-  kable_styling()
+ggplot(all_data, aes(x = env_pc1, y = log_CH4_c)) +
+  geom_point()
+
+ggplot(all_data, aes(x = env_pc2, y = log_CH4_c)) +
+  geom_point()
+
+ggplot(all_data, aes(x = env_pc3, y = log_CH4_c)) +
+  geom_point()
+
+ggplot(all_data, aes(x = Total_moisture, y = log_CH4_c)) +
+  geom_point()
+summary(lm(log_CH4_c ~ Total_moisture, data = all_data))
 
 ggplot(all_data, aes(x = Region, y = log_CH4_c)) +
        geom_boxplot() +
@@ -188,11 +212,6 @@ ggplot(all_data, aes(x = interaction(Land_type, Region), y = log_CH4_c)) +
        geom_boxplot() +
        geom_jitter()
 summary(lm(log_CH4_c ~ interaction(Land_type, Region), data = all_data))
-
-ggplot(all_data, aes(x = Total_moisture, y = log_CH4_c)) +
-       geom_point() +
-       geom_smooth(method = 'lm')
-summary(lm(log_CH4_c ~ Total_moisture, data = all_data))
 
 com_matrix <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
 richness <- rowSums(com_matrix > 0)
@@ -272,6 +291,7 @@ x <- 3
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)]))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = 'jaccard', binary = TRUE))
 
 # Geographic similarity
 geo_sim <- calc_sim_matrix(all_data[, c('Lat', 'Long')])
@@ -283,6 +303,8 @@ env_sim <- calc_sim_matrix(select(all_data, pH:Total_moisture))
 
 # Diagnostics
 print(mantel(com_sim, geo_sim))
+print(mantel(env_sim, geo_sim))
+print(mantel(com_sim, env_sim))
 
 print(ggplot(all_data, aes(x = Lat, y = Long)) + 
   geom_point(aes(color = all_data$Land_type)) +
@@ -309,21 +331,147 @@ print(ggplot(mapping = aes(c(env_sim))) +
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples"))
 
-model <- varComp(log_CH4_c ~ asv,
+model <- varComp(log_CH4_c ~ 1,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+model1 <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, env = env_sim) )
+varComp.test(model, model1)
+lrtest(model, model1)
 summary(model)
-model <- varComp(log_CH4_c ~ asv + Region + Land_type,
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(com = com_sim) )
+model1 <- varComp(log_CH4_c ~ 1,
+                   data = all_data)
+varComp.test(model, model1)
+lrtest(model, model1)
+summary(model)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(com = com_sim_bin) )
+model1 <- varComp(log_CH4_c ~ 1,
+                   data = all_data)
+varComp.test(model, model1)
+lrtest(model, model1)
+summary(model)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim_bin, env = env_sim) )
+model1 <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, env = env_sim) )
+varComp.test(model, model1)
+lrtest(model, model1)
+summary(model)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+model1 <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+lrtest(model, model1)
+varComp.test(model, model1)
+summary(model1)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model_null <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim) )
+model <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+lrtest(model_null, model)
+summary(model)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+
+model <- varComp(log_CH4_c ~  Region + Land_type,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+model1 <- varComp(log_CH4_c ~  Region + Land_type,
+                   data = all_data,
+                   varcov = list( com = com_sim, env = env_sim) )
+varComp.test(model, model1)
+
+model <- varComp(log_CH4_c ~  Region + Land_type,
+                   data = all_data,
+                   varcov = list(com = com_sim) )
+model1 <- varComp(log_CH4_c ~ 1,
+                   data = all_data,
+                   varcov = list( com = com_sim) )
+
+varComp.test(model1, model)
+lrtest(model1, model)
+
+model <- varComp(log_CH4_c ~ Region + Land_type,
+                   data = all_data,
+                   varcov = list(com = com_sim) )
+model1 <- varComp(log_CH4_c ~ Region + Land_type,
+                   data = all_data)
+varComp.test(model, model1)
+lrtest(model, model1)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ Region + Land_type,
                    data = all_data,
                    varcov = list(com = com_sim, env = env_sim) )
-summary(model)
+model1 <- varComp(log_CH4_c ~ Region + Land_type,
+                   data = all_data, varcov = list(env = env_sim))
+varComp.test(model, model1)
+lrtest(model, model1)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ Region,
+                   data = all_data,
+                   varcov = list(com = com_sim, env = env_sim) )
+model1 <- varComp(log_CH4_c ~ Region,
+                   data = all_data, varcov = list(env = env_sim))
+varComp.test(model, model1)
+lrtest(model, model1)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+#+ exploratory_stuff, eval=FALSE
+
+model_geo <- varComp(log_CH4_c ~ asv + Region + Land_type,
+                   data = all_data,
+                   varcov = list(com = com_sim, env = env_sim) )
+model_env <- varComp(log_CH4_c ~ asv + Region + Land_type,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim) )
+lrtest(model_full, model_land, model_reg, model_com, model_geo, model_env)
+lrtest(model_full, model_land)
+lrtest(model_full, model_reg)
+krtest(model_full, model_com)
+lrtest(model_full, model_geo)
+lrtest(model_full, model_env)
+
+fit <- varComp(log_CH4_c ~ 1, all_data, varcov = list(geo = geo_sim, env = env_sim, com = com_sim))
+fit1 <- varComp(log_CH4_c ~ 1, all_data, varcov = list(geo = geo_sim, env = env_sim))
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+summary(fit1)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
 model <- varComp(log_CH4_c ~ asv,
                    data = all_data,
                    varcov = list(com = com_sim) )
 summary(model)
-library(gap)
 
-h2G(c(model$varComps['com'], err = model$sigma2), vcov(model, what = 'varComp'))
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+h2G(c(model$varComps['com'], err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
 
 all_data$locale <- interaction(all_data$Region, all_data$Land_type)
 unique(all_data$locale)
@@ -331,7 +479,12 @@ model <- varComp(log_CH4_c ~ asv + locale,
                    data = all_data,
                    varcov = list(com = com_sim, env = env_sim) )
 summary(model)
-h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'random'))
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'random', drop = FALSE))
+
+model <- varComp(log_CH4_c ~ asv ,
+                   data = all_data, ~ pc1 + env_pc2 + Land_type)
+summary(model)
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'random', drop = FALSE))
 
 #' ## Geography Correlated with Community Composition
 #'

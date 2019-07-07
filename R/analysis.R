@@ -22,16 +22,17 @@ library(broom)
 #library(morris)
 library(varComp)
 library(vegan)
-#library(gap)
 library(parallel)
-#library(qvalue)
+library(qvalue)
 library(knitr)
 library(kableExtra)
-library(eulerr)
-library(GGally)
+#library(eulerr)
+#library(GGally)
 library(phyloseq)
 library(doParallel)
 library(gap)
+library(lmtest)
+
 num.cores <- detectCores()
 registerDoParallel(cores = 3)
 
@@ -39,8 +40,8 @@ registerDoParallel(cores = 3)
 tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
 #+ r import_data
 
-taxon_table <- as.data.frame(data.table::fread('../output/taxon_table.csv'))
-all_data <- as.data.frame(data.table::fread('../output/gab_all_vst_troph.csv'))
+taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE)
+all_data <- data.table::fread('../output/gab_all_vst_troph.csv', data.table = FALSE)
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 
@@ -49,6 +50,12 @@ asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
 vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
 asvs <- asvs[, colSums(asvs) > 0]
 all_data <- cbind(vars, asvs)
+
+# Add location factor
+all_data[all_data$Y > 30000, 'geocode'] <- 'A'
+all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
+all_data[all_data$Y < 10000, 'geocode'] <- 'C'
+all_data$geocode <- factor(all_data$geocode)
 
 #' # Overview
 #' 
@@ -109,7 +116,10 @@ all_data <- cbind(vars, asvs)
 #+ trad_correlations
 
 colnames(all_data[, 1:13])
-ggpairs(all_data[, 3:13])
+
+print(ggplot(all_data, aes(x = X, y = Y)) + 
+  geom_point(aes(color = all_data$Wetland)) +
+  labs(title = "Distribution of sites highlighted by wetland or upland"))
 
 ggplot(all_data, aes(x = Vmax, y = Low_final_k)) + geom_point()
 
@@ -117,17 +127,36 @@ ggplot(all_data, aes(x = pmoa_copy_num, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ pmoa_copy_num, data = all_data))
+
 ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
   geom_point() +
   geom_smooth(method = 'lm')
 summary(lm(Vmax ~ pmoa_copy_num, data = all_data))
 
+adonis(asvs ~ all_data$Wetland)
+
 pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
-#screeplot(pca)
-#summary(pca)
-pc1 <- scores(pca)$sites[, 'PC1']
-pc2 <- scores(pca)$sites[, 'PC2']
-ggplot(all_data, aes(x = pc1, y = Low_final_k)) +
+screeplot(pca)
+head(summary(pca))
+all_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+all_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+all_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = pc1, y = pc2))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = pc1, y = pc3))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = pc2, y = pc3))
+
+ggplot(all_data, aes(color = geocode)) +
+  geom_point(aes(x = pc1, y = pc2))
+ggplot(all_data, aes(color = geocode)) +
+  geom_point(aes(x = pc1, y = pc3))
+ggplot(all_data, aes(color = geocode)) +
+  geom_point(aes(x = pc2, y = pc3))
+
+ggplot(all_data[all_data$pc1 < 0,], aes(x = pc1, y = Low_final_k)) +
        geom_point() +
        geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ pc1, data = all_data))
@@ -136,18 +165,56 @@ ggplot(all_data, aes(x = pc1, y = Vmax)) +
        geom_point() +
        geom_smooth(method = 'lm')
 summary(lm(Vmax ~ pc1, data = all_data))
-my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
-          score = scores(pca)$species[, 'PC1'])
-taxon_table  %>% 
-  left_join(my_asvs) %>% 
-  filter(abs(score) > 0.5) %>% 
-  kable(digits = 2) %>% 
-  kable_styling()
+
+#my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
+#          score = scores(pca)$species[, 'PC1'])
+#taxon_table  %>% 
+#  left_join(my_asvs) %>% 
+#  filter(abs(score) > 0.5) %>% 
+#  kable(digits = 2) %>% 
+#  kable_styling()
 
 ggplot(all_data, aes(x = pc2, y = Low_final_k)) +
        geom_point() +
        geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ pc2, data = all_data))
+
+env_pca <- rda(as.matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))
+screeplot(env_pca)
+head(summary(env_pca))
+all_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+all_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = env_pc1, y = env_pc2))
+ggplot(all_data, aes(color = geocode)) +
+  geom_point(aes(x = env_pc1, y = env_pc2))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = env_pc1, y = Mois_cont))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = env_pc1, y = C_percent))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = env_pc1, y = N_percent))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = env_pc1, y = Bulk_dens))
+ggplot(all_data, aes(x = Wetland, y = env_pc1)) +
+  geom_boxplot() + 
+  geom_jitter()
+summary(lm(env_pc1 ~ Wetland, all_data))
+ggplot(all_data, aes(x = Wetland, y = Mois_cont)) +
+  geom_boxplot() + 
+  geom_jitter(aes(color = Site))
+summary(lm(Mois_cont ~ Wetland, all_data))
+## Spatial PCA
+
+geo_pca <- rda(as.matrix(all_data[, c('X', 'Y')]))
+screeplot(geo_pca)
+summary(geo_pca)
+all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
+
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = geo_pc1, y = Low_final_k))
+ggplot(all_data, aes(color = Wetland)) +
+  geom_point(aes(x = geo_pc1, y = Mois_cont))
 
 ggplot(all_data, aes(x = Wetland, y = Low_final_k)) +
        geom_boxplot() +
@@ -158,36 +225,76 @@ ggplot(all_data, aes(x = Mois_cont, y = Low_final_k)) +
        geom_point() +
        geom_smooth(method = 'lm')
 summary(lm(Vmax ~ Mois_cont, data = all_data))
+
 com_matrix <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-richness <- rowSums(com_matrix > 0)
-shannon <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "shannon")
-simpson <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "simpson")
+all_data$richness <- rowSums(com_matrix > 0)
+all_data$shannon <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "shannon")
+all_data$simpson <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "simpson")
+
 ggplot(data = all_data, aes(x = richness, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ richness, data = all_data))
+
 ggplot(data = all_data, aes(x = richness, y = Vmax)) +
   geom_point() +
   geom_smooth(method = 'lm')
 summary(lm(Vmax ~ richness, data = all_data))
 
+# Low K and Shannon, w/ and w/o outlier
+
 ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ shannon, data = all_data))
+
+ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  labs(title = "Without sample 26")
+summary(lm(Low_final_k ~ shannon, data = all_data[all_data$shannon > 5, ]))
+
+# V max and Shannon, w/ and w/o outlier
+
 ggplot(data = all_data, aes(x = shannon, y = Vmax)) +
   geom_point() +
   geom_smooth(method = 'lm')
-tidy(lm(Vmax ~ shannon, data = all_data))
+summary(lm(Vmax ~ shannon, data = all_data))
+
+ggplot(data = all_data[all_data$shannon > 6, ], aes(x = shannon, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  labs(title = "Without sample 1 and 26")
+summary(lm(Vmax ~ shannon, data = all_data[all_data$shannon > 6, ]))
+
+# Low k and Simpson, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = simpson, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm')
-tidy(lm(Low_final_k ~ simpson, data = all_data))
+summary(lm(Low_final_k ~ simpson, data = all_data))
+
+ggplot(data = all_data[all_data$simpson > 0.998, ], aes(x = simpson, y = Low_final_k)) +
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  labs(title = "Without sample 1 and 26")
+summary(lm(Low_final_k ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
+
+# Vmax and simpson, w/ and w/o outlier
+
 ggplot(data = all_data, aes(x = simpson, y = Vmax)) +
   geom_point() +
   geom_smooth(method = 'lm')
-tidy(lm(Vmax ~ simpson, data = all_data))
+summary(lm(Vmax ~ simpson, data = all_data))
+
+ggplot(data = all_data[all_data$simpson > 0.998, ], aes(x = simpson, y = Vmax)) +
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  labs(title = "Without sample 1 and 26")
+summary(lm(Vmax ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
+
+
+
 #'
 #' ## Summary of correlations
 #'
@@ -223,20 +330,31 @@ calc_sim_matrix <- function(x) {
 x <- 3
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)]))
+com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "jaccard", binary = TRUE))
 
 # Geographic similarity
 geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
+with(all_data, qplot(X, Y))
+qplot(c(geo_sim))
 
 # environmental similarity'
 env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-# 
-all_data[all_data$Y > 30000, 'geocode'] <- 'A'
-all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
-all_data[all_data$Y < 10000, 'geocode'] <- 'C'
-all_data$geocode <- factor(all_data$geocode)
+#' ## Collinearity
 
+#+ collinear_all_data
+with(all_data, cor(pc1, env_pc1))
+with(all_data, cor(pc3, env_pc1))
+anova(lm(pc1 ~ geocode, all_data))
+anova(lm(env_pc1 ~ geocode, all_data))
+anova(lm(env_pc1 ~ Wetland, all_data))
+anova(lm(pc1 ~ Wetland, all_data))
+print(mantel(com_sim_bin, geo_sim))
+print(mantel(com_sim, geo_sim))
+print(mantel(com_sim_bin, env_sim))
+print(mantel(com_sim, env_sim))
+print(mantel(geo_sim, env_sim))
 
 #' ## Model diagnostics for all data
 
@@ -244,6 +362,9 @@ all_data$geocode <- factor(all_data$geocode)
 
 varcomp_diag <- function(data) {
 print(mantel(com_sim, geo_sim))
+print(mantel(com_sim, env_sim))
+print(mantel(geo_sim, env_sim))
+
 
 print(ggplot(data, aes(x = X, y = Y)) + 
   geom_point(aes(color = data$Wetland)) +
@@ -264,6 +385,9 @@ print(ggplot(data, aes(asv)) +
 print(ggplot(mapping = aes(c(com_sim))) + 
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Community Similarity (Bray-Curtis)", y = "Number of Samples"))
+print(ggplot(mapping = aes(c(com_sim_bin))) + 
+  geom_histogram(binwidth = 0.05) + 
+  labs(x = "Community Similarity (Jaccard)", y = "Number of Samples"))
 print(ggplot(mapping = aes(c(geo_sim))) + 
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Spatial Similarity (Euclidean)", y = "Number of Samples"))
@@ -277,6 +401,78 @@ summary(model)
 }
 varcomp_diag(all_data)
 
+#+ r com_var_comp_test
+
+fit <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim))
+fit1 <- varComp(Low_final_k ~ 1, all_data)
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+h2 <- h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+var_comps_se <- data.frame(comp = c('com'), h2 = c(h2$h2G), 
+           SE = c(sqrt(h2$Varh2G)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
+
+
+fit <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim_bin))
+fit1 <- varComp(Low_final_k ~ 1, all_data)
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+h2 <- h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+var_comps_se <- data.frame(comp = c('com'), h2 = c(h2$h2G), 
+           SE = c(sqrt(h2$Varh2G)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
+
+fit <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim, env = env_sim))
+fit1 <- varComp(Low_final_k ~ geocode, all_data, varcov = list(env = env_sim))
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+h2 <- h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+var_comps_se <- data.frame(comp = c('com', 'env'), h2 = c(h2$h2G, h2$h2GE), 
+           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
+
+
+fit <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim_bin, env = env_sim))
+fit1 <- varComp(Low_final_k ~ geocode, all_data, varcov = list(env = env_sim))
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+h2 <- h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+var_comps_se <- data.frame(comp = c('com', 'env'), h2 = c(h2$h2G, h2$h2GE), 
+           SE = c(sqrt(h2$Varh2G), sqrt(h2$Varh2GE)))
+ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
+  geom_pointrange() 
+
+
+fit <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim, env = env_sim))
+fit1 <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim))
+
+varComp.test(fit, fit1)
+
+
+fit <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim_bin, env = env_sim))
+fit1 <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim, env = env_sim))
+
+varComp.test(fit, fit1)
+h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
 #' ## Geography Correlated with Community Composition
 #'
 #' Community and geography are correlated as demonstrated by the Mantel test for
@@ -327,7 +523,7 @@ varcomp_diag(all_data)
 
 # ## Model diagnostics for Wetland data
 
-#+ cor_using_varcomp
+#+ cor_using_varcomp, eval=FALSE
 is.na(all_data$pmoa_copy_num)
 fake_data <- all_data
 fake_data$pmoa_copy_num[is.na(all_data$pmoa_copy_num )] <- mean(all_data$pmoa_copy_num, na.rm = T)
@@ -378,13 +574,40 @@ env_sim <- calc_sim_matrix(dry_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', '
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -x], method = 'jaccard', binary = TRUE))
 
+pca <- rda(as.matrix(dry_data[, grepl("^[asv]", colnames(dry_data))]))
+screeplot(pca)
+
+dry_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+dry_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+dry_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+
+env_pca <- rda(as.matrix(dry_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))
+screeplot(env_pca)
+summary(env_pca)
+dry_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+dry_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+
+#+ collinear_dry_data, eval=FALSE
+with(dry_data, cor(pc1, env_pc1))
+with(dry_data, cor(pc2, env_pc1))
+with(dry_data, cor(pc3, env_pc1))
+anova(lm(pc1 ~ geocode, dry_data))
+anova(lm(env_pc1 ~ geocode, dry_data))
+print(mantel(com_sim_bin, geo_sim))
+print(mantel(com_sim, geo_sim))
+print(mantel(com_sim_bin, env_sim))
+print(mantel(com_sim, env_sim))
+print(mantel(geo_sim, env_sim))
 
 varcomp_diag(dry_data)
 
 #' # Analyze model output
 
+
 #+ r analyze_model_output
+
 
 
 
@@ -400,6 +623,15 @@ taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[
                           (length(r)-0)}
                                       ] }
        )
+hist(my_model_output[my_model_output$comps == 'e', 'p.value'])
+head(my_model_output)
+myqs <- qvalue(my_model_output[my_model_output$comps == 'gce', 'p.value'], fdr.level = 0.1)
+myqs$pi0
+summary(myqs)
+hist(myqs)
+plot(myqs)
+myqs
+filter(taxon_table, asv %in% my_model_output[my_model_output$comps == 'e' & myqs$significant == TRUE, 'asv'])
 
 #' ## Variance components
 
@@ -463,7 +695,7 @@ dry_model_output %>%
 
 
 
-#+ r plot_shared_taxa
+#+ r plot_shared_taxa, eval=FALSE
 plot_asv_euler <- function(model_output) {
 asvs <- 
 model_output %>% 
@@ -497,7 +729,6 @@ group_by(comps) %>%
   kable_styling() %>% 
   collapse_rows(columns = 1)
 
-plot_asv_euler(my_model_output)
 
 #' ### Wetland Model
 
@@ -513,7 +744,6 @@ group_by(comps) %>%
   kable_styling() #%>% 
 #  collapse_rows(columns = 1)
 
-plot_asv_euler(wet_model_output)
 
 #' ### Upland Model
 
@@ -530,9 +760,8 @@ dry_model_output  %>%
   collapse_rows(columns = 1)
 
 
-plot_asv_euler(dry_model_output)
 
-#+ phylo_tree
+#+ phylo_tree, eval=FALSE
 
 x <- 3
 asv <- asvs[, x]
@@ -584,3 +813,216 @@ var_comps_se <- data.frame(comp = c('uni', 'env'), h2 = c(h2$h2G, h2$h2GE),
 ggplot(var_comps_se, aes(x = comp, y = h2, ymax = h2 + SE, ymin = h2 - SE)) +
   geom_pointrange() 
 sessionInfo()
+
+#+ exploratory_stuff, eval=FALSE
+
+with(all_data, cor(pc1, env_pc1))
+with(all_data, cor(pc3, env_pc1))
+anova(lm(pc1 ~ geocode, all_data))
+anova(lm(env_pc1 ~ geocode, all_data))
+anova(lm(env_pc1 ~ Wetland, all_data))
+anova(lm(pc1 ~ Wetland, all_data))
+fit <- varComp(Low_final_k ~ asv, dry_data, ~ pc1 + env_pc1 + geocode)
+summary(fit)
+h2G(c(fit$varComps['pc1'], err = fit$sigma2), vcov(fit, what = 'varComp')[c(1,4), c(1,4)])
+V <- c(fit$varComps, err = fit$sigma2)
+VCOV <- vcov(fit, what = 'varComp', drop = FALSE)
+h2GE(V, VCOV)
+
+fit2 <- varComp(Low_final_k ~ asv, all_data, ~ env_pc1 + geocode)
+fit3 <- varComp(Low_final_k ~ asv, all_data, ~ pc1 + geocode)
+fit4 <- varComp(Low_final_k ~ asv, all_data, ~ env_pc1 + pc1 )
+fit5 <- varComp(Low_final_k ~ asv, all_data, ~  pc1 )
+fit6 <- varComp(Low_final_k ~ asv, all_data, ~  pc2 )
+fit7 <- varComp(Low_final_k ~ asv, all_data)
+fit8 <- varComp(Low_final_k ~ asv, all_data, ~ geocode)
+summary(fit)
+lrtest(fit, fit2)
+lrtest(fit, fit3)
+lrtest(fit, fit4)
+lrtest(fit4, fit5)
+lrtest(fit7, fit8)
+
+
+model <- varComp(Low_final_k ~ asv + geocode, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp'))
+
+model <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
+model1 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(geo = geo_sim, env = env_sim) )
+model2 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+model3 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim, geo = geo_sim) )
+
+lrtest(model, model1)
+lrtest(model, model2)
+lrtest(model, model3)
+
+model <- varComp(Low_final_k ~ asv, data = all_data)
+model1 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(geo = geo_sim) )
+model2 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(env = env_sim) )
+model3 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim) )
+
+lrtest(model, model1)
+lrtest(model, model2)
+lrtest(model, model3)
+
+model <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim) )
+model1 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(geo = geo_sim, env = env_sim) )
+model2 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(geo = geo_sim, com = com_sim) )
+model3 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim) )
+
+lrtest(model, model1)
+lrtest(model2, model)
+lrtest(model, model3)
+
+model3 <- varComp(Low_final_k ~ asv, data = all_data)
+
+lrtest(model2, model3)
+
+
+model2 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(com = com_sim_bin) )
+
+model3 <- varComp(Low_final_k ~ asv, data = all_data)
+
+lrtest(model2, model3)
+
+fit <- varComp(Low_final_k ~ asv + geocode, all_data, ~ pc1 + env_pc1 + geocode/Wetland)
+summary(fit)
+fit1 <- varComp(Low_final_k ~ asv, all_data, ~ env_pc1 + geo_pc1)
+summary(fit1)
+lrtest(fit, fit1)
+
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+fit <- varComp(Low_final_k ~ asv, all_data, ~ pc1 + geocode + env_pc1)
+summary(fit)
+fit1 <- varComp(Low_final_k ~ asv, all_data, ~ geocode + env_pc1)
+summary(fit1)
+lrtest(fit, fit1)
+
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+fit <- varComp(Low_final_k ~ asv + geocode, all_data, ~ pc1 + Wetland + env_pc1)
+summary(fit)
+fit1 <- varComp(Low_final_k  ~ asv + geocode, all_data, ~ Wetland + env_pc1)
+summary(fit1)
+lrtest(fit, fit1)
+ps <- foreach(asv = seq_len(ncol(asvs)), .combine = rbind) %dopar% {
+cbind(asv = colnames(asvs)[asv], tidy(lm(Low_final_k ~ asvs[, asv], all_data))[2, 5])
+}
+nrow(ps)
+ps[ps$p.value < 0.000000001,]
+tidy(lm(Low_final_k ~ asv, all_data))[2, 5]
+
+com_sim <- 1 - as.matrix(vegdist(asvs[, -1], method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -1], method = "jaccard", binary = TRUE))
+fit <- varComp(Low_final_k ~ asvs[, 1], all_data, 
+varcov = list(com = com_sim, env = env_sim))
+summary(fit)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+com_sim <- 1 - as.matrix(vegdist(asvs[, -6203], method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -6203], method = "jaccard", binary = TRUE))
+fit <- varComp(Low_final_k ~ asvs[, 6203], all_data, 
+varcov = list(com = com_sim, env = env_sim))
+summary(fit)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+asv <- 1
+com_sim <- 1 - as.matrix(vegdist(asvs[, -asv], method = "bray"))
+model <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim))
+summary(model)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+model_n <- varComp(Low_final_k ~ geocode, all_data)
+summary(model_n)
+lrtest(model, model_n)
+
+model1 <- varComp(Low_final_k ~ asvs[, asv] + geocode, all_data, varcov = list(jom = com_sim))
+summary(model1)
+h2G(c(model1$varComps, err = model1$sigma2), vcov(model1, what = 'varComp', drop = FALSE))
+model1_n <- varComp(Low_final_k ~ asvs[, asv] + geocode, all_data)
+summary(model1_n)
+lrtest(model1, model1_n)
+
+
+
+ggplot(all_data, aes(x = Mois_cont, y = Low_final_k)) +
+#  facet_wrap(~ Wetland, scales = 'free') +
+  geom_point() + 
+  stat_smooth(method = 'lm')
+summary(lm(Low_final_k ~ Mois_cont + Wetland, all_data))
+summary(lm(Low_final_k ~ Mois_cont, all_data))
+
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+fit1 <- varComp(Low_final_k ~ asv , all_data, ~ pc1)
+summary(fit1)
+lrtest(fit, fit1)
+levels(all_data$geocode) <- levels(all_data$geocode)[c(2, 3, 1)]
+fit <- varComp(Low_final_k ~ geocode, all_data, varcov = list(com = com_sim, env = env_sim))
+fit1 <- varComp(Low_final_k ~ geocode, all_data, varcov = list(env = env_sim))
+
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+summary(fit)
+h2GE(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
+fit <- varComp(Low_final_k ~ asv, all_data, ~  pc1 + env_pc1)
+summary(fit)
+fit1 <- varComp(Low_final_k ~ asv, all_data, ~  pc1)
+summary(fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Low_final_k ~ asv, all_data, ~  pc1 + env_pc1)
+summary(fit)
+fit1 <- varComp(Low_final_k ~ asv, all_data, ~  env_pc1)
+summary(fit1)
+lrtest(fit, fit1)
+
+
+with(all_data, cor(pc1, env_pc1))
+with(all_data, cor(pc1, geo_pc1))
+with(all_data, cor(env_pc1, geo_pc1))
+
+model <- varComp(Low_final_k ~ asv + geocode + Wetland, data = all_data,
+                 varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+summary(model)
+
+model1 <- varComp(Low_final_k ~ asv, data = all_data,
+                 varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+summary(model1)
+lrtest(model, model1)
+
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+all_data <- all_data[all_data$Wetland == 'Upland', ]
+
+
+model <- varComp(Low_final_k ~ asv , data = dry_data, ~ pc1  + env_pc1 + geocode)
+summary(model)
+
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+
+model <- varComp(Low_final_k ~ geocode, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim) )
+summary(model)
+
+model1 <- varComp(Low_final_k ~ asv, data = dry_data,
+                 varcov = list(com_sim,  env_sim) )
+lrtest(model, model1)
+
+model <- varComp(Low_final_k ~ asv, data = all_data, ~ geo_pc1 + pc1 + 
+pc2 + pc3 + env_pc1 + env_pc2)
+summary(model)
