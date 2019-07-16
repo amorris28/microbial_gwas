@@ -37,25 +37,120 @@ num.cores <- detectCores()
 registerDoParallel(cores = 3)
 
 #+ r tree_analysis
-tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
+#tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
 #+ r import_data
 
 taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE)
 all_data <- data.table::fread('../output/gab_all_vst_troph.csv', data.table = FALSE)
+gen_data <- data.table::fread('../output/gab_all_vst_gen.csv', data.table = FALSE)
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 
+all_data <- all_data[all_data$Wetland == 'Upland', ]
+
 ## Remove ASVs only present in 1 sample
-asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+remove_asvs_in_1_sample <- function(dataset) {
+asvs <- as.matrix(dataset[, grepl("^[asv]", colnames(dataset))])
+vars <- dataset[, !grepl("^[asv]", colnames(dataset))]
 asvs <- asvs[, colSums(asvs) > 0]
-all_data <- cbind(vars, asvs)
+cbind(vars, asvs)
+}
+all_data <- remove_asvs_in_1_sample(all_data)
+gen_data <- remove_asvs_in_1_sample(gen_data)
 
 # Add location factor
 all_data[all_data$Y > 30000, 'geocode'] <- 'A'
 all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
 all_data[all_data$Y < 10000, 'geocode'] <- 'C'
 all_data$geocode <- factor(all_data$geocode)
+
+pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
+screeplot(pca)
+head(summary(pca))
+all_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+all_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+all_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+
+env_pca <- rda(as.matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))
+screeplot(env_pca)
+head(summary(env_pca))
+all_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+all_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+
+geo_pca <- rda(as.matrix(all_data[, c('X', 'Y')]))
+screeplot(geo_pca)
+summary(geo_pca)
+all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
+
+pca <- rda(as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))]))
+screeplot(pca)
+head(summary(pca))
+gen_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+gen_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+gen_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+
+env_pca <- rda(as.matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')]))
+screeplot(env_pca)
+head(summary(env_pca))
+gen_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+gen_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+
+geo_pca <- rda(as.matrix(gen_data[, c('X', 'Y')]))
+screeplot(geo_pca)
+summary(geo_pca)
+gen_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
+
+#+ r sim_mat
+
+calc_sim_matrix <- function(x) {
+1/(1+as.matrix(dist(as.matrix(scale(x)))))
+}
+
+
+# Community similarity
+asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+x <- 3
+asv <- asvs[, x]
+asv_tax <- colnames(asvs)[x]
+com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "jaccard", binary = TRUE))
+
+# Geographic similarity
+geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
+with(all_data, qplot(X, Y))
+qplot(c(geo_sim))
+
+# environmental similarity'
+env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
+
+# com similarity gen
+asvs_gen <- as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))])
+
+x <- 3
+asv <- asvs_gen[, x]
+asv_tax <- colnames(asvs_gen)[x]
+com_sim_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "bray"))
+com_sim_bin_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "jaccard", binary = TRUE))
+
+# Geographic similarity
+geo_sim_gen <- calc_sim_matrix(gen_data[, c('X', 'Y')])
+with(gen_data, qplot(X, Y))
+qplot(c(geo_sim_gen))
+
+## spatial smoothing function boondoggle
+#qplot(x = X, y = Y, data = all_data) + 
+#  stat_smooth() + 
+#  coord_fixed()
+#fit <- loess(scale(Y) ~ scale(X), data = all_data, span = 0.2)
+#summary(fit)
+#fitted <- predict(fit)
+#ggplot(all_data, aes(scale(X), scale(Y))) +
+#  geom_point() +
+#  coord_fixed() + 
+#  geom_line(aes(y = fitted), color = 'red')
+#plot(fitted)
+# environmental similarity'
+env_sim_gen <- calc_sim_matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')])
 
 #' # Overview
 #' 
@@ -113,6 +208,54 @@ all_data$geocode <- factor(all_data$geocode)
 #'
 #' # Traditional correlations
 
+
+varCompGE <- function(model, drop = FALSE) {
+  if (length(model$varComps) <= 1) {
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
+  } else {
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
+  }
+}
+
+permute_no_replace_for <- function(perm_vec, nperm = 999) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+samples <- cbind(samples, truth = perm_vec)
+for (i in seq_len(nperm)) {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+  colnames(samples)[i] <- paste0('perm.', i)
+}
+return(samples)
+}
+
+taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[ 
+                      if( any(is.na(r))){ 
+                          (which(is.na(r))[1]-1) 
+                       }else{
+                          (length(r)-0)}
+                                      ] }
+       )
+hist(my_model_output[my_model_output$comps == 'e', 'p.value'])
+head(my_model_output)
+myqs <- qvalue(my_model_output[my_model_output$comps == 'gce', 'p.value'], fdr.level = 0.1)
+myqs$pi0
+summary(myqs)
+hist(myqs)
+plot(myqs)
+myqs
+filter(taxon_table, asv %in% my_model_output[my_model_output$comps == 'e' & myqs$significant == TRUE, 'asv'])
+
+suppressMessages(system.time(my_asvs_com <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %dopar% {
+asv_tax <- colnames(asvs)[i]
+com_sim <- 1 - as.matrix(vegdist(asvs[, -i]))
+model <- varComp(Low_final_k ~  asvs[, i] + Mois_cont + N_percent + C_percent + Bulk_dens + geocode, data = all_data, ~ cholRoot(com_sim):geocode)
+bind_cols(tibble(asv = asv_tax) , as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2], F.value = anova(model)$`F value`[2], 
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = F))))))
+}
+))
 #+ trad_correlations
 
 colnames(all_data[, 1:13])
@@ -135,12 +278,6 @@ summary(lm(Vmax ~ pmoa_copy_num, data = all_data))
 
 adonis(asvs ~ all_data$Wetland)
 
-pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
-screeplot(pca)
-head(summary(pca))
-all_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
-all_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
-all_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
 
 ggplot(all_data, aes(color = Wetland)) +
   geom_point(aes(x = pc1, y = pc2))
@@ -179,11 +316,6 @@ ggplot(all_data, aes(x = pc2, y = Low_final_k)) +
        geom_smooth(method = 'lm')
 summary(lm(Low_final_k ~ pc2, data = all_data))
 
-env_pca <- rda(as.matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))
-screeplot(env_pca)
-head(summary(env_pca))
-all_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
-all_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
 ggplot(all_data, aes(color = Wetland)) +
   geom_point(aes(x = env_pc1, y = env_pc2))
 ggplot(all_data, aes(color = geocode)) +
@@ -205,11 +337,6 @@ ggplot(all_data, aes(x = Wetland, y = Mois_cont)) +
   geom_jitter(aes(color = Site))
 summary(lm(Mois_cont ~ Wetland, all_data))
 ## Spatial PCA
-
-geo_pca <- rda(as.matrix(all_data[, c('X', 'Y')]))
-screeplot(geo_pca)
-summary(geo_pca)
-all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
 
 ggplot(all_data, aes(color = Wetland)) +
   geom_point(aes(x = geo_pc1, y = Low_final_k))
@@ -318,28 +445,6 @@ summary(lm(Vmax ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
 #' subset to include only asvs present in more than one sample (so those only present
 #' in zero samples or one sample were removed).
 
-#+ r sim_mat
-
-calc_sim_matrix <- function(x) {
-1/(1+as.matrix(dist(as.matrix(scale(x)))))
-}
-
-
-# Community similarity
-
-x <- 3
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "bray"))
-com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "jaccard", binary = TRUE))
-
-# Geographic similarity
-geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
-with(all_data, qplot(X, Y))
-qplot(c(geo_sim))
-
-# environmental similarity'
-env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
 #' ## Collinearity
 
@@ -355,6 +460,144 @@ print(mantel(com_sim, geo_sim))
 print(mantel(com_sim_bin, env_sim))
 print(mantel(com_sim, env_sim))
 print(mantel(geo_sim, env_sim))
+
+with(all_data, qplot(geo_pc2, Low_final_k))
+summary(lm(Low_final_k ~ geo_pc2, all_data))
+with(all_data, qplot(pc1, Low_final_k))
+summary(lm(Low_final_k ~ pc1, all_data))
+with(all_data, qplot(pc1, geo_pc2))
+summary(lm(geo_pc2 ~ pc1, all_data))
+with(all_data, qplot(env_pc1, Low_final_k))
+summary(lm(Low_final_k ~ env_pc1, all_data))
+qplot(c(com_sim), c(geo_sim))
+qplot(c(com_sim), c(env_sim))
+
+
+
+### Genetics example	
+trt=gl(2, 15)
+set.seed(2340)
+dat=data.frame(trt=trt)
+dat$SNP=matrix(sample(0:2, 120, replace=TRUE), 30)
+dat$Y  = as.numeric(trt)+rnorm(30) + dat$SNP%*%rnorm(4)
+str(dat)
+(vcf0 = varComp(Y~trt, dat, ~ibs(SNP)))
+(vcf00 = varComp(Y~trt, dat, varcov = list(`ibs(SNP)`=IBS(dat$SNP)))) ## same as above
+(vcf1 = varComp(Y~trt, dat, ~ibs(SNP):trt)) ## two variance components
+h2GE(c(vcf1$varComps, err = vcf1$sigma2), vcov(vcf1, what = 'varComp', drop = FALSE))
+range(tcrossprod(ibs(dat$SNP)) - IBS(dat$SNP))
+range(tcrossprod(cholRoot(com_sim)) - com_sim)
+1 - as.matrix(dist(x, method='manhattan') * .5
+     /max(1, ncol(x)) )
+VEG <- 1 - as.matrix(vegdist(asvs) * .5 / max(1, ncol(asvs)))
+
+dat$trt[1]=NA
+varComp(Y~trt, dat, ~ibs(SNP))  ## 29 observations compared to 30 in vcf0
+dat$SNP[2,1]=NA
+varComp(Y~trt, dat, ~ibs(SNP))  ## still, 29 observations, as ibs handles sporadic NA
+dat$SNP[3, ]=NA
+varComp(Y~trt, dat, ~ibs(SNP))  ## 28 observations, as no genotype for the 3rd obs
+dat
+fun_sim <- calc_sim_matrix(all_data$Vmax)
+qplot(c(geo_sim), c(fun_sim)) + stat_smooth(method = 'lm')
+mantel(fun_sim, geo_sim)
+mantel(fun_sim, com_sim)
+mantel(fun_sim, env_sim)
+
+summary(aov(Low_final_k ~ geocode, all_data))
+
+
+all_data$Wetland <- factor(all_data$Wetland)
+all_data$geocode <- factor(all_data$geocode, levels = c("A", "C", "B"))
+ggplot(all_data, aes(x = X, y = Y, color = Low_final_k)) + 
+  geom_jitter()
+
+all_data$Wetland <- factor(all_data$Wetland, levels = c("Upland", "Wetland"))
+all_data$Land_type <- factor(all_data$Land_type)
+all_data$site_by_wetland <- factor(paste(all_data$geocode, all_data$Wetland, sep = "_"))
+levels(all_data$site_by_wetland)
+all_data$geocode <- factor(all_data$geocode, levels = c('A', 'B', 'C'))
+
+
+asvs_pa <- decostand(x=asvs, method="pa") 
+i <- 1
+com_sim <- 1 - as.matrix(vegdist(asvs_pa[, -i], method = 'jaccard'))
+
+model <- varComp(Low_final_k ~ asvs_pa[, 1] , data = all_data,
+                 varcov = list(com = com_sim) )
+summary(model)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = F))
+model1 <- varComp(Low_final_k ~  1, data = all_data,
+                 varcov = list(geo = geo_sim) )
+summary(model1)
+varComp.test(model, model1)
+i <- 1
+model <- varComp(Low_final_k ~  asvs[, 1] + Mois_cont + N_percent + C_percent + Bulk_dens + geocode, data = all_data, ~ cholRoot(com_sim):geocode)
+summary(model)
+my_asvs_com$p.value
+head(my_asvs_com)
+
+hist(my_asvs_com$p.value)
+myqs <- qvalue(my_asvs_com$p.value)
+myqs$pi0
+summary(myqs)
+hist(myqs)
+plot(myqs)
+myqs
+filter(taxon_table, asv %in% my_asvs_com$asv[myqs$significant])
+as.list(my_asvs_com[myqs$significant, 'asv'])
+sum(my_asvs_com$asv[myqs$significant] %in% my_asvs_com$asv)
+
+model <- varComp(Low_final_k ~ 1, data = all_data)
+                 
+summary(model)
+model1 <- varComp(Low_final_k ~ 1, data = all_data,
+                 ~ cholRoot(com_sim))
+summary(model1)
+varComp.test(model, model1)
+
+permute_no_replace_for <- function(perm_vec, nperm = 999) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+samples <- cbind(samples, truth = perm_vec)
+for (i in seq_len(nperm)) {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+  colnames(samples)[i] <- paste0('perm.', i)
+}
+return(samples)
+}
+i <- 1
+output <- varComp(function_permute[, i] ~ 1, data = all_data, 
+        ~cholRoot(com_sim))
+function_permute <- permute_no_replace_for(all_data$Low_final_k)
+output <- foreach(i = seq_len(ncol(function_permute)), .combine = 'c') %dopar% {
+full <- varComp(function_permute[, i] ~ 1, data = all_data, 
+        ~ cholRoot(com_sim))
+null <- varComp(function_permute[, i] ~ 1, data = all_data)
+p.value(varComp.test(full, null))
+}
+output_varcomps <- sapply(output, function(x) {x$varComps})
+hist(output_varcomps)
+abline(v = model1$varComps)
+hist(output)
+abline(v = p.value(varComp.test(model, model1)))
+sum(output <= p.value(varComp.test(model, model1)))/999
+
+lrtest(model, model1)
+model1 <- varComp(Low_final_k ~ 1, data = all_data,
+                 ~ geo_pc2 + env_pc1)
+summary(model1)
+
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+varComp.test(model, model1)
+
+model1 <- varComp(Low_final_k ~ 1, data = all_data,
+                 varcov = list(env = env_sim, geo = geo_sim) )
+summary(model1)
+varComp.test(model, model1)
 
 #' ## Model diagnostics for all data
 
@@ -395,14 +638,24 @@ print(ggplot(mapping = aes(c(env_sim))) +
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples"))
 
+#+ linear_score_tests
+
 model <- varComp(Low_final_k ~ asv, data = data,
                  varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
 summary(model)
 }
 varcomp_diag(all_data)
 
-#+ r com_var_comp_test
+model <- varComp(Low_final_k ~ 1, data = all_data,
+                 varcov = list(com = com_sim, env = env_sim, geo = geo_sim) )
+summary(model)
 
+model1 <- varComp(Low_final_k ~ 1, data = all_data,
+                 varcov = list(env = env_sim, geo = geo_sim) )
+summary(model1)
+varComp.test(model, model1)
+#+ r com_var_comp_test
+mantel(com_sim, geo_sim)
 fit <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim))
 fit1 <- varComp(Low_final_k ~ 1, all_data)
 
@@ -473,6 +726,7 @@ fit1 <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim, env = en
 
 varComp.test(fit, fit1)
 h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE))
+
 #' ## Geography Correlated with Community Composition
 #'
 #' Community and geography are correlated as demonstrated by the Mantel test for
@@ -489,48 +743,8 @@ h2G(c(fit$varComps, err = fit$sigma2), vcov(fit, what = 'varComp', drop = FALSE)
 #' isn't having a major influence on the results, I ran the models with all of the data
 #' and then again within wetland and within upland
 
-#+ r h2ge_attempt
-
-#
-#h2GE(all_data$Low_final_k, com_sim)
-#h2GE
-#h2G(all_data$Low_final_k, com_sim)
-#h2G(all_data$Low_final_k, env_sim)
-#h2G(all_data$Low_final_k, geo_sim)
-#h2GE(c(model$varComps, model$sigma2))
-#h2GE
-#cov(c(model$varComps, model$sigma2))
-#
-#model <- varComp(Low_final_k ~ taxon + geocode, data = all_data,
-#                 varcov = list(com = com_sim, env = env_sim) )
-#anova(model)$`Pr(>F)`[2]
-#calc_varcomp_per(model)
-#
-#model <- varComp(Low_final_k ~ taxon + geocode, data = all_data, 
-#                 varcov = list(com = com_sim, env = env_sim) )
-#summary(model)
-#
-#levels(all_data$geocode)
-#all_data$geocode <- factor(all_data$geocode, levels(all_data$geocode)[c(2,3,1)])
-#model1 <- varComp(lowk ~ taxon + all_data$geocode, varcov = list(com = com_sim, env = env_sim) )
-#summary(model1)
-#
-#
-#
-#anova(model, model2)
-#anova(model)
-
-
 # ## Model diagnostics for Wetland data
 
-#+ cor_using_varcomp, eval=FALSE
-is.na(all_data$pmoa_copy_num)
-fake_data <- all_data
-fake_data$pmoa_copy_num[is.na(all_data$pmoa_copy_num )] <- mean(all_data$pmoa_copy_num, na.rm = T)
-model <- varComp(Low_final_k ~ pmoa_copy_num + geocode,
-                 data = fake_data, na.action = na.exclude,
-                 varcov = list(com = com_sim, env = env_sim) )
-summary(model)
 #+ r varcomp_diagnostics_wet, eval=FALSE
 
 wet_data <- filter(all_data, Wetland == 'Wetland')
@@ -616,22 +830,6 @@ wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_
 dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
 
 
-taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[ 
-                      if( any(is.na(r))){ 
-                          (which(is.na(r))[1]-1) 
-                       }else{
-                          (length(r)-0)}
-                                      ] }
-       )
-hist(my_model_output[my_model_output$comps == 'e', 'p.value'])
-head(my_model_output)
-myqs <- qvalue(my_model_output[my_model_output$comps == 'gce', 'p.value'], fdr.level = 0.1)
-myqs$pi0
-summary(myqs)
-hist(myqs)
-plot(myqs)
-myqs
-filter(taxon_table, asv %in% my_model_output[my_model_output$comps == 'e' & myqs$significant == TRUE, 'asv'])
 
 #' ## Variance components
 
@@ -1026,3 +1224,57 @@ lrtest(model, model1)
 model <- varComp(Low_final_k ~ asv, data = all_data, ~ geo_pc1 + pc1 + 
 pc2 + pc3 + env_pc1 + env_pc2)
 summary(model)
+
+fit <- varComp(Low_final_k ~ 1, all_data, ~ cholRoot(geo_sim) + cholRoot(com_sim) + cholRoot(env_sim))
+fit1 <- varComp(Low_final_k ~ 1, all_data, ~ cholRoot(com_sim) + cholRoot(env_sim))
+summary(fit)
+summary(fit1)
+varCompGE(fit)
+varCompGE(fit1)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Low_final_k ~ 1, all_data, varcov = list(com = com_sim_bin))
+fit1 <- varComp(Low_final_k ~ 1, all_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Low_final_k ~ 1, all_data, ~ pc1)
+fit1 <- varComp(Low_final_k ~ 1, all_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Vmax ~ 1, all_data, varcov = list(com = com_sim))
+fit1 <- varComp(Vmax ~ 1, all_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Vmax ~ 1, all_data, varcov = list(com = com_sim_bin))
+fit1 <- varComp(Vmax ~ 1, all_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+fit <- varComp(Vmax ~ 1, all_data, ~ pc1)
+fit1 <- varComp(Vmax ~ 1, all_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+
+
+colnames(gen_data[1:15])
+fit <- varComp(CH4 ~ 1, gen_data, varcov = list(com = com_sim_gen))
+fit1 <- varComp(CH4 ~ 1, gen_data)
+summary(fit)
+varCompGE(fit)
+varComp.test(fit, fit1)
+lrtest(fit, fit1)
+

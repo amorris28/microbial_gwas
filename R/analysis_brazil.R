@@ -47,6 +47,8 @@ vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
 asvs <- asvs[, colSums(asvs) > 0]
 all_data <- cbind(vars, asvs)
 
+all_data$log_CH4_c <- with(all_data, log(CH4 + abs(min(CH4)) + 1))
+
 #' # Overview
 #' 
 #' The goal of this project is to answer the question: is microbial community 
@@ -115,7 +117,6 @@ colnames(all_data[, 1:40])
 #ggcorr(all_data[, c(2:3, 8:34, 36, 38)], nbreaks = 4, label = TRUE)
 
 #+ other_correlations
-all_data$log_CH4_c <- with(all_data, log(CH4 + abs(min(CH4)) + 1))
 pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
 screeplot(pca)
 
@@ -299,6 +300,15 @@ geo_sim <- calc_sim_matrix(all_data[, c('Lat', 'Long')])
 # environmental similarity'
 env_sim <- calc_sim_matrix(select(all_data, pH:Total_moisture))
 
+
+#+ screwing_around_with_models
+all_data$region_land_type <- factor(paste(all_data$Region, all_data$Land_type, sep = '_'))
+levels(all_data$region_land_type)
+fit <- varComp(log_CH4_c ~ region_land_type, all_data,
+               ~ cholRoot(com_sim):region_land_type)
+summary(fit)
+h2GE(c(fit$varComps[-c(1, 5)], err = fit$sigma2), vcov(fit, what = 'varComp', drop = T ))
+
 #' ## Model diagnostics for all data
 
 # Diagnostics
@@ -330,7 +340,16 @@ print(ggplot(mapping = aes(c(geo_sim))) +
 print(ggplot(mapping = aes(c(env_sim))) + 
   geom_histogram(binwidth = 0.05) + 
   labs(x = "Environment Similarity (Euclidean)", y = "Number of Samples"))
+model <- varComp(log_CH4_c ~ asv, all_data,
+                 ~ ibs(com_sim))
+summary(model)
 
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+model <- varComp(log_CH4_c ~ asv, all_data,
+                 varcov = list(com = com_sim))
+summary(model)
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
+SNP=matrix(sample(0:2, 120, replace=TRUE), 30)
 model <- varComp(log_CH4_c ~ 1,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
@@ -347,7 +366,7 @@ model <- varComp(log_CH4_c ~ 1,
                    varcov = list(com = com_sim) )
 model1 <- varComp(log_CH4_c ~ 1,
                    data = all_data)
-varComp.test(model, model1)
+varComp.test(model, model1, test = 'LinScore')
 lrtest(model, model1)
 summary(model)
 h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
@@ -376,7 +395,7 @@ h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop =
 model <- varComp(log_CH4_c ~ 1,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
-model1 <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+model1 <- varComp(log_CH4_c ~ Region + Land_type,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
 lrtest(model, model1)
@@ -384,16 +403,20 @@ varComp.test(model, model1)
 summary(model1)
 h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
 
-model_null <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+model <- varComp(log_CH4_c ~ Region + Land_type,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim) )
-model <- varComp(log_CH4_c ~ interaction(Region, Land_type),
+model1 <- varComp(log_CH4_c ~ Region + Land_type,
                    data = all_data,
                    varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
 lrtest(model_null, model)
 summary(model)
 h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
 
+model <- varComp(log_CH4_c ~ Region + Land_type,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, env = env_sim) )
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = FALSE))
 
 model <- varComp(log_CH4_c ~  Region + Land_type,
                    data = all_data,
@@ -401,7 +424,17 @@ model <- varComp(log_CH4_c ~  Region + Land_type,
 model1 <- varComp(log_CH4_c ~  Region + Land_type,
                    data = all_data,
                    varcov = list( com = com_sim, env = env_sim) )
+varComp.test(model, model1, test = 'LinScore')
+lrtest(model, model1)
+
+model <- varComp(log_CH4_c ~  Region + Land_type,
+                   data = all_data,
+                   varcov = list(geo = geo_sim, com = com_sim, env = env_sim) )
+model1 <- varComp(log_CH4_c ~  Region + Land_type,
+                   data = all_data,
+                   varcov = list(com = com_sim, geo = geo_sim) )
 varComp.test(model, model1)
+lrtest(model, model1)
 
 model <- varComp(log_CH4_c ~  Region + Land_type,
                    data = all_data,
