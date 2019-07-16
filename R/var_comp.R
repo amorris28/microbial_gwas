@@ -14,7 +14,6 @@ library(data.table)
 registerDoParallel(cores = 28)
 
 all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
-
 # Variance Component Analysis
 
 # sim_mat
@@ -48,42 +47,20 @@ all_data[all_data$Y < 10000, 'geocode'] <- 'C'
 all_data$geocode <- factor(all_data$geocode)
 
 ## Permute response
-permute_no_replace <- function(perm_vec, nperm = 1000) {
-samples <- matrix(ncol = nperm, nrow = length(perm_vec))
-foreach(i = seq_len(nperm), .combine = "cbind") %do% {
-  sample_i <- sample(perm_vec)
-  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
-    sample_i <- sample(perm_vec)
-  }
-  samples[, i] <- sample_i
-}
-}
-permute_no_replace_par <- function(perm_vec, nperm = 1000) {
-samples <- matrix(ncol = nperm, nrow = length(perm_vec))
-samples <- cbind(samples, truth = perm_vec)
-foreach(i = seq_len(nperm), .combine = "cbind") %dopar% {
-  sample_i <- sample(perm_vec)
-  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
-    sample_i <- sample(perm_vec)
-  }
-  samples[, i] <- sample_i
-}
-}
-
-permute_no_replace_for <- function(perm_vec, nperm = 1000) {
-samples <- matrix(ncol = nperm, nrow = length(perm_vec))
-samples <- cbind(samples, truth = perm_vec)
-for (i in seq_len(nperm)) {
-  sample_i <- sample(perm_vec)
-  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
-    sample_i <- sample(perm_vec)
-  }
-  samples[, i] <- sample_i
-  colnames(samples)[i] <- paste0('perm.', i)
-}
-return(samples)
-}
-all_perm_lowk <- permute_no_replace_for(all_data$Low_final_k, nperm = 1000)
+#permute_no_replace_for <- function(perm_vec, nperm = 1000) {
+#samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+#samples <- cbind(samples, truth = perm_vec)
+#for (i in seq_len(nperm)) {
+#  sample_i <- sample(perm_vec)
+#  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+#    sample_i <- sample(perm_vec)
+#  }
+#  samples[, i] <- sample_i
+#  colnames(samples)[i] <- paste0('perm.', i)
+#}
+#return(samples)
+#}
+#all_perm_lowk <- permute_no_replace_for(all_data$Low_final_k, nperm = 1000)
 
 # Fit models
 
@@ -93,24 +70,26 @@ c(model$varComps, err = model$sigma2)/sum(c(model$varComps, model$sigma2)))))
 }
 
 fit_varComps <- function(x, y, all_data) {
-  print(paste0(round(x/ncol(asvs)*100, 2), ' % of ASVs and ', round(y/ncol(perm_lowk)*100, 2), ' % of permutations'))
+  #print(paste0(round(x/ncol(asvs)*100, 2), ' % of ASVs and ', round(y/ncol(perm_lowk)*100, 2), ' % of permutations'))
+  print(paste0(round(x/ncol(asvs)*100, 2), ' % of ASVs'))
 asv <- asvs[, x]
 asv_tax <- colnames(asvs)[x]
-lowk <- perm_lowk[, y]
-n_perm <- colnames(perm_lowk)[y]
+lowk <- all_data$Low_final_k
+#lowk <- perm_lowk[, y]
+#n_perm <- colnames(perm_lowk)[y]
 com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 parts <- NULL
-model <- varComp(lowk ~ asv + geocode,
+model <- varComp(lowk ~ asv ,
                  data = all_data,
-                 varcov = list(com = com_sim, env = env_sim) )
+                 varcov = list(geo = geocode, com = com_sim, env = env_sim) )
 parts <- bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'gce'), calc_varcomp_per(model))
 
 model <- varComp(lowk ~ asv, data = all_data,
                  varcov = list(com = com_sim, env = env_sim) )
 parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'ce'), calc_varcomp_per(model)))
 
-model <- varComp(lowk ~ asv + geocode, data = all_data,
-                 varcov = list(com = com_sim))
+model <- varComp(lowk ~ asv, data = all_data,
+                 varcov = list(geo = geocode, com = com_sim))
 
 parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'gc'), calc_varcomp_per(model)))
 model <- varComp(lowk ~ asv + geocode, data = all_data,
@@ -133,11 +112,15 @@ model <- varComp(lowk ~ asv, data = all_data)
 parts <- bind_rows(parts, bind_cols(tibble(asv = asv_tax, perm = n_perm, comps = 'n'), calc_varcomp_per(model)))
 parts
 }
-perm_lowk <- all_perm_lowk
+#perm_lowk <- all_perm_lowk
 
+#system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind', 
+#                               .packages = c('vegan', 'varComp', 'tidyverse')) %:% 
+#  foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
+#            suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
+#                 })
 system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind', 
-                               .packages = c('vegan', 'varComp', 'tidyverse')) %:% 
-  foreach(j = seq_len(ncol(perm_lowk)), .combine = 'rbind') %dopar% {
+                               .packages = c('vegan', 'varComp', 'tidyverse')) %do% { 
             suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
                  })
 fwrite(results, "../output/var_comp_out_all.csv")
