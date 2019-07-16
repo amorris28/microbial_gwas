@@ -33,15 +33,6 @@ accession number, link, or DOI
 Supplement: They have encouraged us to include additional information including
 data, tables, figures, text, images, videos, or recordings.
 
-\section*{Tasks} 
-\begin{enumerate}
-\item What is novel about this? The first anyone has treated an ecosystem like an
-organism. The first time anyone has done this correlative approach well
-by considering environmental and spatial structure in the data. 
-\item Interpret model output
-\item Decide whether to include Gabon data, Brazil data, or both
-\end{enumerate}
-
 \section*{Abstract}
 
 
@@ -54,7 +45,8 @@ Ecologists have investigated the effects of changing
 biodiversity on ecosystem function for decades, but this research has primarily
 focused on linking terrestrial plant community richness with productivity
 \citep{hooper2005}. More recently, there has been an interest in linking
-microbial community composition to ecosystem functions such as host disease 
+microbial community structure to the functioning of ecosystems both inside and
+outside of a host, such as disease states, plant productivity,
 and soil greenhouse gas emissions \citep{schimel1998, singh2010}. 
 However, it remains unclear to what extent 
 microbial community composition is important for determining the rates of ecosystem-scale
@@ -64,12 +56,12 @@ address this challenge, we propose integrating traditional
 biodiversity-ecosystem function research with ideas from genotype-phenotype
 mapping in population genetics. This connection will help determine
 whether microbial community
-composition alters ecosystem-scale functions independent
+composition alters ecosystem-scale function independent
 of the underlying environmental variation.
 
 If local selection always optimizes the available biodiversity to maximize
-ecosystem function, them microbial community composition should not matter for
-pedicting the rates of microbially-mediated functions. Instead, 
+ecosystem function, then microbial community composition should not matter for
+predicting the rates of microbially-mediated functions. Instead, 
 the rates of these functions should be determined by the
 underlying environmental variation. In this case, the microbial community simply
 acts as a conduit through which the abiotic
@@ -77,22 +69,26 @@ environment alters ecosystem function. However, experiments that manipulate the
 connection between environmental factors and microbial community composition
 such as environmental treatments, common gardens, and reciprocal transplants
 have shown different rates of ecosystem functions for different microbial
-communities. This has been observed for plant decomposition
+communities under the same conditions \citep{reed2007}. 
+This has been observed for plant decomposition
 \citep{strickland2009}, plant phenology \citep{panke-buisse2015}, soil nitrogen
 cycling \citep{balser2005}, and soil greenhouse gas emissions
 \citep{cavigelli2000}. Therefore, variation in microbial community composition
 seems to generate variation in ecosystem function. However, in order to
-incorporate microorganisms into ecosystem models, we need to identify what
-aspects of microbial biodiversity are associated with variation in ecosystem
-function.
+incorporate microorganisms into ecosystem models, 
+we should distinguish between the portion
+of microbial biodiversity that is contributing to ecosystem function as a
+consequence of the environmental conditions and that contributing uniquely due to
+variation in the community independent of the environment. 
 
 Most studies of microbial community function focus on one of two aspects of
-microbial community structure that are hypothesized to be predictive of
+microbial community structure that are hypothesized to predict
 ecosystem function. The first aspect is functional gene or transcript abundance.
-In this case, qPCR or shotgun metagonemic sequencing is used to target a gene
+In this case, qPCR or shotgun metagonemic sequencing is used to estimate the
+abundance of a gene
 or transcript that is a putative marker for a microbial process. For example,
 the gene \textit{mcrA}, which encodes the enzyme that performs the final step in
-methanogenesis, is hypothesized to be correlated with the rate of
+methanogenesis, is hypothesized to predict the rate of
 methane production. Other examples include \textit{pmoA} and methanotrophy,
 \textit{nifH} and nitrification, and \textit{nosZ} and denitrification. The
 rationale for this hypothesis is that the abundance of a functional group (as
@@ -105,8 +101,8 @@ negative or not significant \citep{rocca2015}.
 
 The second aspect of microbial community structure hypothesized to predict
 ecosystem function is taxonomic or functional
-diversity. Diversity is either estimated using a measure of community
-composition such as 16S rRNA gene ribotyping or manipulated through some proxy
+diversity. Diversity is either estimated from sequence variants of a barcode
+gene such as the 16S rRNA gene or manipulated through some proxy
 of diversity such as sequential dilution or varying filter sizes. Studies that
 experimentally manipulate diversity generally find a relationship between
 the applied diversity treatment and ecosystem functions including methanotrophy
@@ -115,8 +111,9 @@ the applied diversity treatment and ecosystem functions including methanotrophy
 cases, richness is confounded with other factors such as presence or absence of
 major phylogenetic groups (nematodes, fungi) or abundance of microbial cells. In
 addition, assembled microbial communities pose the same challenges as
-macroorganismal diversity experiments, for example no replication at the highest
-diversity treatment. A review of microbial diversity studies shows that
+macroorganismal diversity experiments, for example lacking replication at the highest
+diversity treatment such that that treatment will always have the most
+productive taxon. A review of microbial diversity studies shows that
 microbial community taxonomic and functional diversity add little variance
 explained to models of ecosystem function. Overall, functional gene
 abundance and community diversity improve models of ecosystem function less than
@@ -128,9 +125,63 @@ biodiversity-ecosystem function research by measuring or manipulating diversity
 and comparing it to function or by looking at the association between richness
 or abundance of a functional group (e.g. plants) and the function performed by
 that group (e.g. productivity). However, in the case of microbes, our knowledge
-of functional groups is quite limited. We cannot be sure that we're accurately
+of functional groups is quite limited. We cannot be sure that we are accurately
 estimating the abundance or diversity of soil microbial functional groups the
-way we can plants in a grassland. 
+way we can plants in a grassland. In addition, we do not know the function of
+most microbial taxa and metagenomic sequences recovered from environmental 
+samples. Because of this, we should look more
+agnostically at the microbial community to identify taxa or groups of taxa that
+are important for predicting the rate of ecosystem function. We can accomplish
+this by drawing on ideas from population genetics.
+
+The challenge of mapping microbial community structure to ecosystem function is
+analogous to the challenge of identifying the genetic basis of complex traits in
+organismal populations. In the latter case, a population exhibits variation in a
+phenotype (e.g. height or disease state) as well as variation in potentially
+thousands of single nucleotide polymorphisms
+(SNPs). To identify the genetic basis for a trait, investigators sample from
+this population and correlate phenotype with genotype. In most cases, there are
+many more loci than individuals and we do not know whether the SNPs are causally
+linked or are simply in linkage disequilibrium with a causal mutation. 
+Genetic loci identified in these genome-wide association
+studies can be the target for future research to dissect the function of those
+genes, can be added or removed to test their association with the trait, or can
+be used as markers for that disease or phenotype even if it has no known
+mechanistic association. This mirrors the problem of microbial
+structure-function mapping. In this case, a population of ecosystems exhibit
+variation in a particular trait or ecosystem function putatively mediated by
+microorganisms as well as variation in metagenomic composition. Investigators
+could sample from this population of ecosystems and correlate the rate of an
+ecosystem function with microbial community composition or gene composition. 
+In order to do this, microbial ecologists should incorporate similar
+methodological and statistical approaches as population geneticists in order to
+make robust associations between microbes and ecosystem function.
+
+Population geneticists trying to make robust associations between genetic loci
+and phenotype must consider several points when designing a genome-wide
+association study. First is
+to identify the precise trait expected to be influenced by genetic variation. 
+Then, to choose a population that exhibits
+substantial variation in the trait of interest. This population should also be
+otherwise relatively homogeneous to avoid other factors that might influence the
+trait. After sampling, statistical methods should take into account population
+stratification due to shared ancestry or local selection that can lead to spurious
+associations between genes and traits. For example, both human height and
+genotype vary systematically across Europe in a latitudinal gradient, which can
+lead to spurious genotype-phenotype associations \citep{novembre2008}. 
+
+Positive associations between genes and
+phenotypes can arise because of true associations, through linkage
+disequilibrium with true genes, or through admixture \citep{lander1994}.
+Microbial structure-function connections could pose these same problems. There
+could be true associations between a microorganism and the ecosystem function
+performed by that taxon, or there could be systematic
+co-occurrence patterns between one taxon and a causal taxon,
+or there could be admixture due to shared history or selection within
+a subset of ecosystems. This is true for 16S amplicons and for
+genes in metagenomic (or other -omic) datsets. 
+Robust structure-function associations rely on
+controlling for the underlying geographic and ecological covariance.
 
 Organisms exhibit population differentiation due to geographic and ecological
 processes \citep{wright1943}. Neutral processes such as local genetic drift and
@@ -143,7 +194,7 @@ is non-limiting then the most productive species should always be present and
 composition should not matter for local ecosystem function. However, if important
 functional groups are dispersal-limited, lost to drift, or are unable to
 colonize a site, then there could be important functional consequences of
-community differentiation to geographic or ecological isolation.
+community differentiation due to geographic or ecological isolation.
 
 There are a number of ways that environmental or spatial distance could obscure
 microbial BEF relationships. For example, historical effects of geographic
@@ -162,42 +213,38 @@ separate the close association between environmental variation, community
 composition, and ecosystem function in order to identify what aspects of
 microbial biodiversity determine the rate of ecosystem function.
 
-The challenge of mapping microbial community structure to ecosystem function is
-analogous to the challenge of identifying the genetic basis of complex traits in
-organismal populations. In the latter case, a population exhibits variation in a
-phenotype (e.g. height or disease state) as well as variation in potentially
-thousands of genetic loci (usually identified as single nucleotide polymorphisms
-(SNPs)). To identify the genetic basis for a trait, investigators sample from
-this population and correlate phenotype with genotype. In most cases, there are
-many more loci than individuals and we do not know the function of genes
-associated with these SNPs. Genetic markers identified in these genome-wide association
-studies can be the target for future research to dissect the function of those
-genes, can be added or removed to test their association with the trait, or can
-be used as marker for that disease or phenotype even if it has no known
-mechanistic association. This mirrors the problem of microbial
-structure-function mapping. In this case, a population of hosts or ecosystems exhibit
-variation in a particular trait or ecosystem function putatively mediated by
-microorganisms as well as variation in metagenomic composition. Investigators
-could sample from this population of ecosystems and correlate the rate of an
-ecosystem function with microbial community composition or gene composition. 
+Successfully connecting microbial community structure to ecosystem function
+depends on being precise about the variation we want to explain. The first and
+often overlooked step is choosing a
+clearly defined function that exhibits considerable variation across ecosystems. 
+Next, be intentional about choosing the
+population to be sampled to maximize the amount of variation. For example, how
+might ecosystems that are otherwise quite similar vary in function?
+Alternatively, how might one ecosystem change in response to a single
+environmental change? This could be achieved by sampling across similar ecosystems 
+or by imposing experimental conditions that minimize environmental variation or
+vary only abiotic factors of interest. 
+It is important to take an agnostic approach towards identifying taxa that are
+indicators of ecosystem function. It is also important to remember that any
+relationships identified in this manner are provisional until further tests are
+performed. The work is not done until the organism has been manipulated through
+addition, knockout, or variation in abundance.
 
-Population geneticists trying to make robust associations between genetic loci
-and phenotype must take into account population stratification. Population
-stratification due to shared ancestry or local selection can lead to spurious
-associations between genes and traits. For example, human height varies
-across Europe in a latitudinal gradient. Positive associations between genes and
-phenotypes can arise because of true associations, through linkage
-disequilibrium with true genes, or through admixture \citep{lander1994}.
-Microbial structure-function connections could pose these same problems. There
-could be true associations between a microorganism and the ecosystem function
-performed by that taxon, or there could be systematic
-co-occurrence patterns between one taxon and a causal taxon like metabolic
-networks, or there could be admixture due to shared history or selection within
-a subset of ecosystems. This is true for ASVs in ribotyping 16S datasets and for
-genes in metagenomic (or other -omic) datsets. 
-Robust structure-function associations rely on
-controlling for these factors.
+In this paper we propose integrating microbial biodiversity-ecosystem function
+research with ideas and techniques from population genetics to advance our
+understanding of the role of microbial commuities in the functioning of
+ecosystems. Perhaps the most important part of that discussion is to define the
+question carefully. In microbial ecology
+structure-function research is focused on answering the question: what is the
+unique contribution of the microbial community to ecosystem function? This is of
+great interest for two reasons. First, because it addresses what is the singular
+contribution of biodiversity to the functioning of ecosystems. Second, on a
+practical level, because answering that question will be essential to
+incorporate a microbial component into ecosystem models.
 
+Is variation in microbial community
+structure associated with differences in ecosystem function across space,
+time, and environments?
 \section{Methods}
 
 \subsection{Sample collection}
@@ -261,10 +308,26 @@ effect of each ASV on the rate of ecosystem function. We fit a variance
 component model for each ASV with ASV abundance as the fixed effect and random
 effects for each of the variance components. This tests the relationship between
 taxon abundance and the rate of ecosystem function after controlling for
-population stratification and data structure. Significant ASVs were identified
-by controlling the false discovery rate 
+population stratification and data structure. The community similarity matrix
+was reconstructed for each model to exclude the predictor ASV. 
+Significant ASVs were identified by controlling the false discovery rate using
+the \texttt{qvalue} package.
 
 \section{Results}
+
+To demonstrate the ideas presented in the Introduction, we re-analyzed data from
+a forthcoming publication \citep{meyer2019}. With these data, we demonstrate the
+importance of selecting the appropriate population to sample from. We are
+precise about the variation we are measuring. Specifically, we measured the rate
+of a specific microbial pathway. In order to minimize environmenal variation, we
+brought intact soil cores into the lab to incubate them under similar
+temperature and methane concentration. We also statistically controlled for
+environmental covariates that we couldn't isolate in the lab including soil
+carbon and nitrogen, soil bulk density, and soil moisture content. Finally, we
+surveyed the microbial community agnostically for microbial markers of ecosystem
+function.
+
+We found that for two pathways of methane oxidation in 
 
 \begin{itemize}
   \item For low-affinity and high-affinity methane oxidation in Gabon and
@@ -300,23 +363,56 @@ ignores important understandings about the nature of ecological processes in
 determining the distribution of microorganisms. The marker gene hypothesis has
 proven unsuccesful in predicting the rates of ecosystem functions from the
 abundance of functional genes and in our example study was not significant in one case and
-was significant in another, though explained a small amount of the variation.
+was significant in another, though explained only a small portion of the variation.
 Similarly, diversity metrics from the entire Prokrayotic community were not
 explanatory. These results agree with recent reviews of this literature and
 demonstrate that these approaches are not a fruitful avenue for elucidating
-microbial structure-function connections. 
+microbial structure-function connections. After identifying significant taxa,
+it is notable that none of the significant taxa fall into expected functional
+groups. For example, none of the taxa identified in this analysis were
+methanotrophs.
 
 Instead, microbial ecologists should treat microbial communities as analogous to
 organisms with the metagenome representing the community genome. In this case,
 ecosystem function represents a phenotype at the community level. As in
 organismal biology, this ecosystem phenotype will be a mix of genotypic effects and
 environmental effects. Using this conceptual framework, population genetic
-approaches can be applied to microbial community datasets to identify 
+approaches can be applied to microbial community datasets to identify  links
+between the composition of microbial communities and the rates of ecosystem
+functions.
 
-Treating ecosystems like organisms. Calculating community heritability. Possible
-approaches: variance component modeling, experimental ecosystem
-selection/experimental evolution, CAFE and the Price equation. Need to collect
-data in such a way to optimally use these techniques that already exist.
+While this analysis focuses on using genome-wide association studies as a model
+for mapping microbial community structure to ecosystem-function, other designs
+are possible. For example, artificial ecosystem selection is a viable approach
+to enrich for communities with high or low rates of ecosystem function
+\citep{swenson2000, panke-buisse2015}. While community-wide association or
+ecosystem-wide association or metagenome-wide association or microbiome-wide
+association studies have sufficient power to identify taxa that are individually
+associated with ecosystem function, whole-community selection could identify
+assemblages of organisms with high rates of function that often co-occur in
+productive ecosystems.
+
+Another possibility that has not to our knowledge been demonstrated with any
+microbial datasets is to apply the ecological form of the Price equation to
+estimate the effects of microbial biodiversity on ecosystem function
+\citep{fox2006, bannar-martin2018}. Using this equation, a change in ecosystem function between two, matched
+observations can be attributed to species additions, species losses, and
+changes in abundance of shared species \citep{fox2006,
+bannar-martin2018}. To
+calculate these vectors, function must be attributed at the species level (e.g.
+biomass measurements of individual plant species). To apply this method to
+microbial communities we will need to measure ecosystem function on a
+per-species basis. There are several ways to do that including quantitative stable-isotope
+probing to measure the accumulation of a substrate in the DNA of a portion of
+the microbial community \citep{hungate2015}, NanoSIMS to measure the incorporation of nutrients at
+the single-cell level \citep{mayali2012}, and isotope source partitioning coupled with measurements
+of microbial pathways through quantification of marker genes through qPCR or
+metagenomics/metatranscriptomics.
+
+This is novel, because it represent the first time that anyone has treated an
+ecosystem like an organism. Further, it is the first time that anyone has
+used this GWAS-esque approach while accounting for both environmental and
+spatial structure in the data. 
 
 \section{Conclusions}
 Microbial community ecosystem function research has demonstrated that
@@ -360,445 +456,6 @@ three approaches to addressing this question:
     isotope source partitioning with functional group assessments, using
     labeling approaches like stable-isotope probing, ...
 \end{enumerate}
-
-
-\section*{Old Text}
-
-\subsection{Biodiversity increases ecosystem function in macrobial communities}
-
-Local species richness is correlated with ecosystem function
-\citep{hooper2005}. Most BEF research has focused on terrestrial plant 
-communities where species losses lead to decreases in community abundance or biomass
-\citep{naeem2003}. There are
-two major explanations for this phenomenon. The first is the sampling effect
-where a more diverse community is more likely to have one particularly
-productive species \citep{cardinale2006}. The second is niche complementarity where more species are
-more likely to occupy separate niches within the same ecosystem resulting in
-more efficient resource use and greater biomass.
-
-Regional species diversity may also be important for
-local ecosystem functioning when metacommunity dynamics regulate the
-diversity and composition of communities \citep{leibold2017}. 
-Typical BEF research focuses on local selection
-as a driver of ecosystem function. However, if regional
-diversity is important, then dispersal processes could alter local species diversity and composition resulting in
-a change in ecosystem function. This model is referred to as Community Assembly
-and the Functioning of Ecosystems (CAFE). Community assembly can alter ecosystem
-function if limiting dispersal reduces the likelihood of a highly productive
-species from dispersing to a local site or if high dispersal of an unproductive
-species overwhelms local selection.
-
-The CAFE approach has been demonstrated using the Price equation where a change in ecosystem function between two, matched
-observations can be attributed to species additions, species losses, and
-changes in abundance of shared species \citep{fox2006,
-bannar-martin2018}. To
-calculate these vectors, function must be attributed at the species level (e.g.
-biomass measurements of individual plant species). The CAFE framework demonstrates
-that not only local richness, 
-but also the composition of communities is important to the functioning of ecosystems.
-
-\subsection{Current approaches to microbial BEF reveal little about 
-structure-function mapping}
-
-The trajectory of microbial BEF research has differed from that of macrobial BEF
-for three reasons. First, microbial communities are
-immensely complex with orders of magnitude more taxa than macrobial communities
-and great intra-taxon variation for certain traits. Second, the way we measure
-microbes using marker gene sequences does not allow us to attribute portions of
-a function of interest to individual taxonomic groups . We can only
-measure function in aggregate across an entire community. Finally, we cannot be
-sure that the taxonomic groups that putatively perform a function are the ones
-contributing in this moment.
-
-As a result of these limitations, microbial ecologists have taken a different
-approach to assessing BEF relationships for microbial communities than others
-have for macrobial communities. This is generally a correlative approach where
-certain community attributes that can be derived from a community matrix are
-tested in terms of their relationship with function. These approaches make
-different assumptions about how microbial communities should map onto function.
-On one end of the spectrum, it is hypothesized that functional gene abundance - genes that
-code for an enzyme that performs one step of a process - should be correlated
-with the rate of the process associated with that gene. In this case, qPCR
-is used to quantify the abundance of a functional gene to test whether it is
-correlated with the rate of a process. This approach has had varied success and even the abundance of a
-functional gene that putatively performs a process is rarely correlated with
-that process \citep{rocca2015}. On the other end of the
-spectrum, investigators make few assumptions about which members of the community should
-alter function and so compute
-taxonomic richness or other diversity metrics from the entire Prokaryotic
-community inferred from 16S rRNA gene sequences. Taxonomic or functional
-diversity of the Prokaryote community generally adds little variance explained
-to models of ecosystem function \citep{graham2016}.
-
-\subsection{Biology through analogy: structure-function mapping is similar
-to genotype-phenotype mapping}
-
-The challenges described above for mapping microbial community structure to
-ecosystem function are analogous to the problem of identifying the
-genetic basis of complex traits in organismal populations. In that case,
-each individual organism has a level for a phenotype (e.g. presence
-or absence of a disease state) as well as a vector of potentially
-thousands of genetic loci with different alleles or single nucleotide
-polymorphisms (SNPs). To identify the genetic basis for this trait, we sample
-a population of organisms and try to correlate a matrix of SNPs with a
-vector of phenotypes. In most cases, there are many more loci than
-individuals, we cannot directly attribute a phenotypic state to a particular
-SNP, and we do not know the function of genes associated with these
-SNPs. This mirrors the problem of microbial structure-function mapping
-and presents a potential set of analyses that could be applied in
-microbial ecology.
-
-In addition to the nature of the data, population geneticists have other
-considerations when trying to make robust associations between phenotype
-and SNPs. For example, loci within the genome that are close together tend
-not to assort independently due to linkage disequilibrium. In addition,
-organisms exhibit population stratification due to a variety of historical
-and selective effects. For example, shared ancestry among European
-populations of humans results in an association between genotype and
-geography across Europe \citep{novembre2008}. This population structure
-can lead to false positives when trying to correlate human genotypes
-with genetic diseases or other phenotypes such as height (citation).
-
-In general, organisms exhibit population differentiation due to spatial
-and environmental patterns \citep{wright1943}. For geography, local genetic
-drift and reduced gene flow due to geographic separation can lead to population
-differentiation \citep{wright1943}. In addition, environmental distance can lead to both selection
-against migrants \citep{hendry2004} and local selection on endemic populations to
-generate variation. While
-these processes have primarily been described for macrobial populations, the
-same principles apply to microorganisms and should be considered
-in microbial structure-function mapping \citep{martiny2006}. 
-
-\subsection{Reframing the question: Is variation in microbial community
-structure associated with differences in ecosystem function across space,
-time, and environments?}
-
-Typical microbial ecosystem function research focuses on whether microbial
-community composition is important at the ecosystem level
-\citep{schimel1998, cavigelli2000, balser2005, graham2016}. Given that
-microbial functional groups typically mediate biogeochemical processes
-and so the loss of a functional group will certainly alter function,
-the answer is "yes". However, this question does not address whether
-microbial community variation is actually useful for predicting or 
-managing ecosystem functions. To address that problem, we need to know
-whether variation within a functional group matters to variation in
-ecosystem function. If local selection always optimizes the available
-biodiversity to maximize process rates given the underlying environmental
-variation, then composition should not matter, because we should be able
-to predict ecosystem function from abiotic factors alone. Environmental
-treatments, common gardens, and reciprocal transplants have shown
-different functional potential for different community compositions.
-In addition, spatial patterns for microbial communities suggest that
-there should be observable diversification due to environmental and
-spatial processes \citep{wright1943, martiny2006}. Therefore, variation
-in microbial community composition seems to result in variation in 
-ecosystem function. However, in order for microbial community data to be
-useful for ecosystem modeling, the challenge is to identify specifically what variation in community composition
-is associated with function across space, time, and environmental gradients.
-To accomplish that, we need to separate the close association between environmental variation, community
-composition, and ecosystem function to identify the aspects of microbial
-biodiversity that are important for ecosystem function.
-
-\subsection*{Extra text for 1.3/1.4}
-
-\begin{enumerate}
-    \item Things exhibit population differentiation due to spatial and environmental 
-    patterns \citep{wright1943}
-    \item Microbes exhibit similar patterns \citep{martiny2006}
-    \item Pop gen tries to identify regions of the genome correlated with
-    traits
-    \item Considering ecosystems as individuals within a population presents
-    an analogous problem of determining community markers of ecosystem traits (functions)
-    \item Thus the goal of microbial BEF is to identify generalizable patterns
-    of genetic variation in microbes to feed into hypothesis testing about
-    potential mechanisms or to incorporate into ecosystem models
-\end{enumerate}
-
-Typically, microbial community structure-function research questions are framed
-as does microbial composition matter to ecosystem function? The answer to this
-question is obviously "yes" given that microorganisms mediate many of the
-processes of interest. The question then becomes does microbial community
-variation within a functional group or overall matter to ecosystem function? 
-Generally it is assumed that microbial composition is functionally irrelevant, 
-though studies of environmental treatments, common gardens, and reciprocal
-transplants have shown that different community compositions are correlated with
-different functions. The challenge with these studies is separating the close
-connection between environmental variation, community composition, and ecosystem
-function. Microorganisms cannot be useful to ecosystem modeling if there
-is no identifiable variation in composition that consistently alters function
-across space, time, and environmental gradients. The question "do we need to
-include microorganisms in ecosystem models?" depends on identifying variation in
-the community associated with function independent of the environment. If that's
-true, then the next step in understanding or modeling these processes is 
-identify what components of the community alter ecosystem function.
-
-There are a number of ways that environmental or spatial covariates could alter
-or obscure connections between microbial community structure and ecoystem
-function. For example, microbial communities exhibit strong biogeographic
-patterns \citep{martiny2006}. The historical effects of geographic proximity,
-such as dispersal limitation, could lead to spurious associations between taxa
-and function if taxa are unevenly distributed across the functional landscape.
-Environmental selection can also shape microbial community structure, so
-selection on the microbial community that is independent of the
-process could lead to erroneous conclusions about the
-underlying drivers of ecosystem function \citep{thompson2017}. For
-example, pH is known to regulate both microbial biodiversity patterns
-\citep{fierer2006} and methane cycling dynamics \citep{ye2012}, which could lead
-to microbial taxa correlated with methane cycling, but mechanistically
-unrelated. Environmental factors that directly influence function, such as
-moisture, could alter function with or without affecting the community. 
-Finally, community stratification where taxa co-occur in certain ecosystems due to
-selection or historical effects for reasons unrelated to the ecosystem function
-could lead to spurious associations.
-
-\subsection{A new framework for structure-function mapping in microbial
-communities}
-
-Microbial ecosystem function could be assessed using statistical techniques
-borrowed from quantitative genetics along with the conceptual framework for
-community assembly processes provided by metacommunity theory and CAFE. This
-would be a two-step process to first identify the portion of variation in
-ecosystem function attributable to different aspects of an ecosystem: the
-community, the underlying environmental variation, and to spatial processes.
-
-\begin{equation}
-V_F=V_E+V_S+V_C+\epsilon
-\end{equation}
-
-Ecosystem function is represented by $V_F$, $V_E$ is variation in the
-environment and covariation between the community and the environment, $V_S$ is
-variation in spatial distance between samples and covariation between the
-community and space, and $V_C$ is variation in the community independent of
-local selection and historical effects. The parameter $V_C$ also incorporates
-unmeasured environmental and spatial effects. 
-
-Each of these variance components also correspond to alternative hypotheses for
-what drives ecosystem function. If most of the variation in $V_F$ is
-attributable to $V_E$, then the environment drives function either directly
-(abiotic processes) or indirectly by selecting for a particular microbial
-community that maximizes function. In this model, the community is simply a 
-conduit through which the environment acts on function. Alternatively, if $V_S$
-explains most of the variation in $V_F$ then this suggests that function is
-primarily a result of historical contingency and differences in dispersal traits.
-Finally, $V_C$ could explain most of the variation in $V_F$. This would be
-consistent with reciprocal transplant and common garden experiments showing that
-community composition drivers ecosystem function independent of the environment.
-
-This framework allows us to address the following questions: 1. Does variation
-in microbial community structure explain a measurable portion of the variation in
-ecosystem function or can all of that variation be attributed to the underlying
-effect of the environmental and spatial processes? If so, 2. Which members of
-the community are significantly correlated with function after controlling for
-the covariances of space and environment? Finally, 3. Do these taxa match our hypotheses about
-what controls ecosystem function (e.g. functional group abundance) or are there
-alternative mechanisms that need to be explored?
-
-
-
-
-\section{Methods}
-
-Sample 16S rRNA gene sequences, environmental covariates, geographic distance,
-ecosystem function. Use the DADA2 pipeline to assign ASVs. 
-phylogenetic and taxonomic assignment Null
-Models \citep{chase2011, stegen2015}
-
-Would it be valuable to use a null model (as in Chase or Stegen) where we
-generate random communities based on the distribution across samples and
-abundance within samples of each taxon. Then try to correlate those abundances
-with our observed rates of ecosystem function to see what distribution of
-structure-function correlations to expect given our community data. These sort
-of null community generating techniques can omit certain community assembly
-processes (such as homogenizing selection or stochastic processes)
-
-An alternative testing approach would be to use Hannah’s permutation test idea
-where we randomly permute the process rates ~1000 times and rebuild the model
-each time to see what the distribution of significant taxa is.
-
-VC - Correlations between taxa and process determined by accounting for spatial
-structure, environmental covariates, and community structure. Represents effect
-of taxonomy, unmeasured environmental variables VE - Account for community
-structure and correlate environmental variables cov(C, E) - The part of the venn
-diagram that disappears when controlling for environment and space VC:VE - Test
-the correlations between community and process rate at a variety of
-environmental conditions.  epsilon/error term - Effects of natural variation,
-unmeasured variables
-
-Another modeling options is HMSC from \cite{ovaskainen2017} 
-
-\section{Results}
-
-For high-affinity methane oxidation in Gabon: We experimentally controlled some
-environmental variables and our measured environmental variables are not
-significantly correlated with process rate (C, N, WFPS) Space is correlated with
-function
-
-
-
-Be careful with attributing a certain \% of the variance to an individual taxa
-when performing partial regression on the residuals. If a taxa explains 60\% of
-the variance in the residuals after controlling for environment and space that
-doesn’t mean it explains 60\% of the overall variance.
-
-\section{Discussion}
-Combination of qPCR and pathway partinioing, qSIP \citep{hungate2015},
-and NanoSIMS \citep{mayali2012} may allow us to assign portions of
-function to particular taxa or functional groups.
-Problems that need to be addressed: We shouldn’t assume that functional groups
-that putatively perform a process are the rate-limiting step or the strongest
-correlate.  There may be unknown members of the community that perform or limit
-a process The final step of the process may not be the rate-limiting step: it
-may be substrate production or nutrient acquisition or something else (e.g.
-Qusheng Jin’s work on modeling methanogenesis) We need to consider the
-underlying biogeographic patterns shaping the distribution of microbial
-communities (à la GWAS). 
-
-\section{Conclusion}
-
-\section*{Outline} 
-\begin{enumerate} 
-  \item Problem statement: Microorganisms putatively mediate biogeochemical
-    cycles and yet we have been unable to demonstrate consistent BEF or CAFE
-  relationships.   
-\item  Opening: Biodiversity ecosystem function research has demonstrated the
-  importance of protecting biodiversity to maintain ecosystem function.
-  However, more recently the importance of community assembly processes such as
-  dispersal have shown that regional diversity is potentially as important as
-  local processes. Therefore, metacommunity dynamics should play a role in local
-  ecosystem functioning.  
-  \item Challenge: Applying CAFE to microbes would be
-  convenient, however microbes pose several unique challenges. 1. Microbial
-  communities are orders of magnitude more complex than macrobial communities.
-  2. We don’t know who performs each function of interest. 3. We cannot
-  attribute a portion of the rate of an ecosystem function to a particular
-  individual or species like we can in plant communities.  
-  \item Solution: The
-  microbial community assembly - ecosystem function relationship is more
-  analogous to the problem of mapping complex phenotypic traits to genetic
-  variation in organisms. In this case we have thousands of genetic loci with
-  unknown functions that may contribute positively or negatively (or not at all)
-  to a particular trait.  
-  \item Studies linking genotype to phenotype have to
-  consider similar processes as metacommunities within the
-  metapopulation such as confounding geography with genotypic similarity.
-  Applying this to microbial metacommunities, associations between microbes and
-  function could be due to a number of factors other than the “genetic” effect
-  of microbial community structure on ecosystem function. By accounting for the
-  covariance structure (space, environment, community interactions) we can
-  identify true structure-function connections.  
-  \item Approach: Demonstrate the
-  previous approaches to microbial structure-function (e.g. abundance-function,
-  diversity-function, PCA or indicator species analysis) and demonstrate our new
-  approach, which accounts for metacommunity dynamics in local ecosystem
-  function. Step 1. Variance partitioning between community, environment, and
-  space. Step 2. GWAS-esque association mapping to identify microbes.  
-  \item Take home: The way we study the functioning of microbial communities is
-  inherently limiting in our ability to apply BEF or CAFE approaches. Instead,
-  we need to learn from GWAS to identify robust structure-function
-  relationships. What we learn from this is that 1. Contrary to past results,
-  microbes do explain a substantial portion of the variation in ecosystem
-  function when we account for other sources of variation. 2. Stochastic
-  processes can alter the relationship between environment/community and
-  function 3.  we cannot assume that we know what part of the community controls
-  ecosystem function (e.g. functional genes) i.e. non-intuitive features can
-  explain a lot of residual variance.  
-  \item Conclusion: This work presents a
-  framework for testing the relationship between microbial community structure
-  and ecosystem function and demonstrates the importance of understanding
-  microbial genetic variation in predicting ecosystem function.  
-  \end{enumerate}
-
-\section*{Possible things to include:}
-Why do we think that communities will be important for understanding ecosystem
-function?
-
-
-
-\begin{equation}
-V_F=V_E+V_C+V_EV_C+cov(C,E)+\epsilon
-\end{equation}
-\begin{equation}
-F_{ij}=C_i+E_j+CE_{ij}+\epsilon_{ijk}
-\end{equation}
-
-In this equation, VF represents variation in the rate of an ecosystem function.
-VE is variation in the environment that independently contributes to the rate of
-the ecosystem function. VC is variation in microbial community structure (i.e.
-composition, abundance, or diversity) that independently contributes to
-ecosystem function. The interaction term VE:VC represents situations in which
-the difference in function between two communities varies by environment. For
-example, community A could outperform community B in environment 1, but not in
-environment 2. Alternatively, community A could outperform B in environment 1
-and environment 2, but the magnitude of the difference varies by environment.
-The term covC,E captures covariance between community and environment where a
-change in the environment produces an associated change in the community.
-Finally,  is an error term for natural variation in these relationships. 
-
-In the context of deterministic versus stochastic/neutral community assembly,
-each portion of the variance represents different assembly processes. The cov(C,
-E) represents selection whereas VC represents neutral processes of drift,
-homogenizing dispersal, or dispersal-limitation. The interaction term VC:VE
-represents differences in the rate constants/Q10s for different communities or
-neutral processes of community assembly under a particular environmental
-condition. VE is independent of the community and so doesn’t represent a
-community assembly process, but is simply a physicochemical driver of VF such as
-gas diffusion through water, tortuosity of soil pores, redox conditions, … I’m
-not sure this paragraph is correct
-
-VE = Direct physicochemical effects on process rates including abiotic
-reactions, diffusivity, temperature limitation/Q10 (that doesn’t affect taxon
-abundance or activity but does affect e.g. reaction rates), soil stabilization
-of chemicals (sorption), tortuosity of soil pores, wind speed (affecting
-differential pressure between soil air and atmosphere), concentration gradient
-between soil and atmosphere.
-
-cov(C, E) = Environmental selection on soil microorganisms that directly
-influence function. Environmental variables that directly affect function and
-also select for a microbe unrelated to function. An environmental variable that
-both directly affects function and indirectly affects function via a microbe. 
-
-VC:VE = Context-dependent organismal traits including different temperature
-optima, substrate affinities, enzyme specificity, redox status/oxygen tolerance,
-pH optima. 
-
-Epsilon = Stochastic processes. Taxa occurrences or
-environmental variables completely unrelated to function.
-
-I can imagine several mechanisms by which a significant correlation between a
-taxon and a process rate might be detected.  An environmental variable directly
-affects function and selects for a microbe unrelated to function (false
-positive). (VE) This would be removed by correcting for environment, but would
-remain if it was due to an unmeasured environmental variable (and so would
-appear in VC).  An environmental variable selects for a microbe that directly
-affects function (cov(C, E)). This would be removed by correcting for the right
-environmental variable, but would be revealed by controlling for everything
-except the environment.  A taxon directly affects function (true positive)  and
-co-occurs with another microbe unrelated to function (false positive) (This
-could be VC or cov(C,E)). False positive would be removed by correcting for
-community similarity. True positive would be lost if perfect covariance between
-function, true positive, and false positive.  Function exhibits a spatial signal
-(due to underlying spatial VE or VC) and a taxon exhibits a similar spatial
-signal, but for different reasons (selection on different VE or VC or historical
-effects (e.g. dispersal limitation)). Would be removed by correcting for space,
-but would not be removed if there was a perfect covariance.
-
-Why is it important to understand VC?  At this point in the development of
-microbial ecology, we know that both selection and dispersal limitation shape
-microbial community assembly. At the extremes, a single bacterial phylotype
-cannot instantly be present in all environments. Likewise, oxygen will kill
-obligate anaerobes. It also appears, to the best of our knowledge, that
-microbial communities of different origins exhibit different functional rates
-when introduced to identical environmental conditions. Therefore, environmental
-selection on microbial communities cannot fully explain variation in ecosystem
-functions if they are mediated by microorganisms. Put another way, even if we
-could perfectly measure VE, we cannot fully understand VF.
-
-The question that follows from this is: Does VC matter on the scales relevant to
-humans? To answer that question, we have to understand the magnitude of 
-
-Null models of community assembly
- 
-VC or VE:VC could also represent unmeasured environmental variables.
 
 \bibliographystyle{ecology} 
 \bibliography{library}
