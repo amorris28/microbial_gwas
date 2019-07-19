@@ -1,7 +1,7 @@
 library(sp)
 library(rgdal)
 
-geodist <- read.table('data/Geodist_gabon_methane_samples_lat_long.txt')
+geodist <- read.table('../data/gabon/Geodist_gabon_methane_samples_lat_long.txt')
 
 
 colnames(geodist) <- c('Site', 'X', 'Y')
