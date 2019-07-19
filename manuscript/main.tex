@@ -1,10 +1,11 @@
 \documentclass{article}
-%\usepackage[utf8]{inputenc}
-%\usepackage{amsmath}
-%\usepackage{amsfonts}
-%\usepackage{amssymb}
-%\usepackage{textalpha}
 \usepackage{natbib}
+\usepackage{subfiles}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{graphicx}
+\graphicspath{{../Figures/}}
 
 \bibpunct{(}{)}{,}{a}{}{;}
 
@@ -245,6 +246,7 @@ incorporate a microbial component into ecosystem models.
 Is variation in microbial community
 structure associated with differences in ecosystem function across space,
 time, and environments?
+
 \section{Methods}
 
 \subsection{Sample collection}
@@ -279,14 +281,16 @@ Next, we used a statistical approach common in population genetics genome-wide
 association studies. We fit variance component mixed models from the
 \texttt{varComp} package to test whether variation in microbial
 community composition expains a significant portion of the variation in
-ecosystem function \citep{qu2013}. First, we fit an intercept-only model with one random effect
-for community similarity calculated from Bray-Curtis dissimilarity for abundance
+ecosystem function \citep{qu2013}. First, we fit an intercept-only model with
+each random effect in all combinations. Variance components included deographic location was coded as a factor, environmental
+similarity from euclidean distance of four edaphic variables including total
+nitrogen, total carbon, moisture content, and bulk density, and
+community similarity calculated from Bray-Curtis dissimilarity for abundance
 data and the Jaccard index for presence/absance data. We tested the significance
 of these components using a linear score test by comparing nested models with and
-without the microbial community variance component \citep{qu2013}. We then estimated
-the community heritability of this function by calculating the degree of
-variation in the rate of ecosystem function due to variation in community
-composition between ecosystems including standard errors on that estimate 
+without each variance component \citep{qu2013}. We then estimated
+the percent of variation in ecosystem function explained by each component 
+including standard errors on that estimate 
 using the \texttt{h2G} function from the
 \texttt{gap} package. We then tested whether microbial community composition explains a
 significant portion of the variation in ecosystem function after accounting for
@@ -315,46 +319,30 @@ the \texttt{qvalue} package.
 
 \section{Results}
 
-To demonstrate the ideas presented in the Introduction, we re-analyzed data from
-a forthcoming publication \citep{meyer2019}. With these data, we demonstrate the
-importance of selecting the appropriate population to sample from. We are
-precise about the variation we are measuring. Specifically, we measured the rate
-of a specific microbial pathway. In order to minimize environmenal variation, we
-brought intact soil cores into the lab to incubate them under similar
-temperature and methane concentration. We also statistically controlled for
-environmental covariates that we couldn't isolate in the lab including soil
-carbon and nitrogen, soil bulk density, and soil moisture content. Finally, we
-surveyed the microbial community agnostically for microbial markers of ecosystem
-function.
 
-We found that for two pathways of methane oxidation in 
+\includegraphics[width=0.5\textwidth]{lowk_pmoa}
+\includegraphics[width=0.5\textwidth]{lowk_pc1}
+\includegraphics[width=0.5\textwidth]{lowk_rich}
+\includegraphics[width=0.5\textwidth]{lowk_shan}
 
-\begin{itemize}
-  \item For low-affinity and high-affinity methane oxidation in Gabon and
-    methane production in Brazil, community composition explains a significant
-    portion of the variation in ecosystem function. (linear score test or
-    likelihood ratio test)
-  \item On its own, the portion of `community heritability' varies by function.
-    \textasciitilde99\% (SE = 20\%) for high affinity, \textasciitilde61\% (SE =
-    39\%)for low affinity, etc. 
-  \item Geographic proximity: high affinity 0.85 (0.10), low affinity n.s. 0.34
-    (0.31)
-  \item Environmental similarity: high affinity 0.61 (0.23), low affinity 0.61 (0.36) 
-  \item Some of these become n.s. when combined suggesting they explain an
-    overlapping portion of variation. Perhaps this means we should fit the
-    variance component model with just the community similarity matrix knowing
-    that that will capture the important components of historical effects and
-    selection.
-  \item Function varies strongly by ecosystem type: in Brazil, pasture has
-    higher methane fluxes than primary or secondary forest; in Gabon, peatlands
-    and wetlands have higher low affinity while plantations and forests have
-    higher high affinity.
-  \item Possible next step: fit a variance component model with community
-    similarity as the random effect and taxon abundance as the fixed effect and
-    collect p.values for each taxon (though this may return none). Or include
-    all three variance components. Adjust for false discovery rate to get
-    significant taxa.
-\end{itemize}
+All three variance components are significant individually. Community
+significant in the community + environment model and geography
+significant in the geography + environment model. Table \ref{tab:pvalues}
+
+\subfile{../tables/var_comp_pvalues}
+
+Including different covariates removes different numbers of
+significant taxa. Some covariates add taxa that were not previously
+identified as significant. Table \ref{tab:n_taxa} 
+
+\subfile{../tables/all_taxa_n}
+
+After controlling for geographic proximity, environmental similarity, and
+similarity in community composition, four taxa were significantly correlated
+with the rate of methane oxidation. None of these four taxa are known methane
+oxidizers or methane producers. Table  \ref{tab:sig_taxa}
+
+\subfile{../tables/all_taxa_sig}
 
 \section{Discussion}
 
@@ -362,15 +350,11 @@ In this paper, we argue that the traditional approach to microbial BEF research
 ignores important understandings about the nature of ecological processes in
 determining the distribution of microorganisms. The marker gene hypothesis has
 proven unsuccesful in predicting the rates of ecosystem functions from the
-abundance of functional genes and in our example study was not significant in one case and
-was significant in another, though explained only a small portion of the variation.
-Similarly, diversity metrics from the entire Prokrayotic community were not
+abundance of functional genes and in our example study was not significant.
+Similarly, diversity metrics from the entire Prokaryotic community were not
 explanatory. These results agree with recent reviews of this literature and
 demonstrate that these approaches are not a fruitful avenue for elucidating
-microbial structure-function connections. After identifying significant taxa,
-it is notable that none of the significant taxa fall into expected functional
-groups. For example, none of the taxa identified in this analysis were
-methanotrophs.
+microbial structure-function connections. 
 
 Instead, microbial ecologists should treat microbial communities as analogous to
 organisms with the metagenome representing the community genome. In this case,
@@ -380,6 +364,67 @@ environmental effects. Using this conceptual framework, population genetic
 approaches can be applied to microbial community datasets to identify  links
 between the composition of microbial communities and the rates of ecosystem
 functions.
+
+There are two ways to interpret an association between taxon abundance and rate
+of function. One is a statistical co-occurrence and the other is a biological
+interpetation, for example pH affects function and pH affects taxon or pH
+affects taxon, which affects function.
+A significant association between a taxon and the rate of ecosystem function
+could be explained a number of ways. One possibility is that the taxon is
+statistically related, because it is causally connected to the function. This
+could be direct, for example an organism that consumes methane, or indirect, for
+example an organism that regulates substrates necessary for consumers of
+methane. In either of these cases, this would represent a taxon that could be
+useful as a biomarker of function or an organism to investigate to understand
+the mechanistic relationship between communities and function. Alternativelly, a significant
+association could occur due to admixture within a community. In a community of
+microorganisms, any organism that tends to be in high abundance under the same
+conditions as methane oxidizers will be correlated with methane oxidation even
+if it has no mechanistic relationship with the rate of methane flux. In fact,
+any taxa in high abundance in highly methanotrophic communities will be
+statistically related to function.
+
+In this variance component modeling framework, many taxa that are significantly
+associated with function become non-significant after accounting for different
+covariates. This could be explained by different relationships between the
+environment, community assembly processes, and the rate of ecosystem function.
+For example, a taxon significantly correlated with function that becomes
+non-significant after controlling for the underlying environmental variation
+could be acting as a conduit through which the environment alters function.
+Alternatively, if a taxon becomes non-significant after controlling for
+geographic proximity, this taxon could be related to function due to historical
+effects such as past environmental conditions or through dispersal from a nearby
+patch. Alternatively, geography could represent unmeasured environmental
+variables that change over distance. Finally, if incorporating community
+similarity makes a taxon non-significant, then 
+
+None of the significant taxa identified by the full variance component model 
+fall into expected functional groups. For example, none of the taxa identified
+in this analysis were methanotrophs or methanogens.
+
+Broad vs narrow processes: Some genetic diseases such as Parkinson's 
+are controlled by a single locus. However, in most GWAS studies the phenotype of
+interest is a result of many loci of small effect (as well as environmental
+factors) such as human height and LDL cholesterol. For ecosystem functions that
+consist of physiologically or phylogenetically "narrow" process (sensu
+\cite{schimel1995b}), it's possible that a single marker gene could control the
+rate of a process. For example, methane flux in permafrost in Sweden may be
+controlled by a single taxon \citep{mccalley2014}. However, most microbial ecosystem functions are likely the result
+of many taxa interacting directly or indirectly with function.
+Trying to identify many taxa of small effect is made easier by constraining that
+variation by defining your population in a way tha makes them similar: 
+similar ecosystem, soil type, and abiotic conditions.
+
+With these data, we demonstrate the
+importance of selecting the appropriate population to sample from. We are
+precise about the variation we are measuring. Specifically, we measured the rate
+of a specific microbial pathway. In order to minimize environmenal variation, we
+brought intact soil cores into the lab to incubate them under similar
+temperature and methane concentration. We also statistically controlled for
+environmental covariates that we couldn't isolate in the lab including soil
+carbon and nitrogen, soil bulk density, and soil moisture content. Finally, we
+surveyed the microbial community agnostically for microbial markers of ecosystem
+function.
 
 While this analysis focuses on using genome-wide association studies as a model
 for mapping microbial community structure to ecosystem-function, other designs
@@ -408,6 +453,38 @@ the microbial community \citep{hungate2015}, NanoSIMS to measure the incorporati
 the single-cell level \citep{mayali2012}, and isotope source partitioning coupled with measurements
 of microbial pathways through quantification of marker genes through qPCR or
 metagenomics/metatranscriptomics.
+
+\subsection{Caveats}
+
+Future studies could improve on the approach illustrated here in a number of
+ways. First, GWAS studies rely on high power to detect significant associations
+between phenotype and SNPs of small effect. This study consistent of 44 samples,
+which is typical for microbial ecology sudies, but would benefit from a large
+sampling of ecosystems and variation in both community composition and function. 
+Second, this exploratory study sampled across
+a diversity of wetland and upland ecosystems in the Congo basin. However, upland
+ecosystems such as forests are known to have the greatest rates of high-affinity
+methane oxidation. Identifying connections between variation in community
+composition and variation in ecosystem function would benefit from sampling a
+population of ecosystems that is known to exhibit variation in the rate of
+the target function. Third, it is important to define a narrow pathway
+definition. Functions such as low-affinity methane oxidation and bulk methane
+production are relatively broad pathways and as such exhibit no significant
+correlation with individual taxa \citep{meyer2019}. Here we have measured
+high-affinity methane oxidation, which is performed by relatively few taxa.
+Functions such as this are more phylogenetically conserved and as such are more
+likely to have significant connections between community and function. Fourth,
+these environmental variables measured may or may not be the correct ones to
+measure to accurately account for the environmental effect on function.
+Moisture, structure, total nitrogen, and total carbon are relatively course
+measurements of environmental variation. Including more environmental variables
+and variables known to influence the rate of the function of interest would more
+accurately estimate the effect of the environment of communities and function.
+This could also be applied to the geographic location of samples. Our study
+sites were clustered around three locations that are far apart and so didn't
+fully capturing the geographic variation underlying these ecosystems. Sampling
+in a grid or logarithmic pattern might more suitable capture variation across
+the landscape. 
 
 This is novel, because it represent the first time that anyone has treated an
 ecosystem like an organism. Further, it is the first time that anyone has
