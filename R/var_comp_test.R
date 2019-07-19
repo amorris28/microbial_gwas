@@ -8,9 +8,8 @@ library(doParallel)
 library(data.table)
 library(microbenchmark)
 
-registerDoParallel(cores = 3)
-num.cores <- detectCores() - 1
-
+registerDoParallel(cores = 4)
+num.cores <- 4
 all_data <- as.data.frame(fread('../output/brazil_cleaned_data.tsv'))
 all_data <- all_data[!is.na(all_data$Long), ]
 
@@ -159,14 +158,19 @@ fit_varComps <- function(x, y, all_data) {
 #            suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
 #                 })
 #fwrite(results, "../output/var_comp_out_brazil.csv")
+a <- rep(seq_len(10), 3)
+b <- rep(seq_len(3), each = 10)
 microbenchmark(
 system.time(results <- foreach(i = seq_len(10), .combine = 'rbind', 
                                .packages = c('vegan', 'varComp', 'tidyverse')) %:% 
-  foreach(j = seq_len(1), .combine = 'rbind') %dopar% {
+  foreach(j = seq_len(ncol(functions)), .combine = 'rbind') %dopar% {
   print(paste0(round(i/ncol(asvs)*100, 2), ' % of ASVs and ', j, ' out of 3 functions'))
             suppressMessages(suppressWarnings(fit_varComps(x = i, y = j, all_data = all_data)))
                  }),
- system.time(my_model_output <- suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq_len(10), fit_varComps, y = 1, all_data = all_data, mc.cores = num.cores))))),
+# system.time(my_model_output <- 
+#suppressMessages(suppressWarnings(do.call(rbind, mclapply(seq_len(100), fit_varComps, y = 1, all_data = all_data, mc.cores = num.cores))))),
+ system.time(my_model_output <- 
+suppressMessages(suppressWarnings(do.call(rbind, mcmapply(fit_varComps, x = a, y = b, MoreArgs = list(all_data = all_data), mc.cores = num.cores))))),
  times = 10)
 #fwrite(results, "../output/var_comp_out_brazil.csv")
  

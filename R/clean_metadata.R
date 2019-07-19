@@ -1,6 +1,6 @@
 
 library(tidyverse)
-library(amorris)
+library(morris)
 
 # Import ------------------------------------------
 raw_troph_data <- read_tsv('../data/gabon/Gabon_methanotrophy_table_scaled.txt')
@@ -17,19 +17,19 @@ troph_data <- raw_troph_data %>%
 
 # Add Wetland variable
 troph_data %<>% left_join(data_frame(Land_type = unique(troph_data$Land_type), 
-           Wetland = factor(c('Wetland', 'Upland', 'Upland', 'Wetland', 'Wetland',
+           Wetland = factor(c('Wetland', 'Upland', 'Upland', 'Wetland', 'Upland',
                               'Wetland', 'Upland', 'Upland', 'Upland'))), by = 'Land_type') %>% 
   select(Sample:Experiment, Wetland, Description:PC3_16S_rna)
 
-# Add WFPS variable
-Site_Pd <- data_frame(
-  Site = factor(unique(troph_data$Site)),
-  Pd = c(2.65, 2.65, 2.65, 2.65, 1.55, 2.65, 1.55, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65)
-)
+## Add WFPS variable
+#Site_Pd <- data_frame(
+#  Site = factor(unique(troph_data$Site)),
+#  Pd = c(2.65, 2.65, 2.65, 2.65, 1.55, 2.65, 1.55, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65, 2.65)
+#)
 
-troph_data %<>% left_join(Site_Pd, by = 'Site') %>% 
-  mutate(WFPS = calc_wfps(Bulk_dens, Mois_cont, Pd)) %>% 
-  select(Sample:Low_final_k, WFPS, Bulk_dens:PC3_16S_rna, -Pd)
+#troph_data %<>% left_join(Site_Pd, by = 'Site') %>% 
+#  mutate(WFPS = calc_wfps(Bulk_dens, Mois_cont, Pd)) %>% 
+#  select(Sample:Low_final_k, WFPS, Bulk_dens:PC3_16S_rna, -Pd)
 
 # Separate numeric data (remove factors)
 troph_num_data <- troph_data %>% 
@@ -40,7 +40,7 @@ num_predictors <- troph_num_data %>% dplyr::select(-Vmax, -Low_final_k)
 
 # Attribute table
 troph_attr_table <- troph_data %>% 
-  select(-Rep, -Experiment, -Description, -Land_type, -Bulk_dens, -Mois_cont)
+  select(-Rep, -Experiment, -Description)
 
 # Organizing attribute table for easy lmer
 atr_tbl_long <- troph_attr_table %>% 
@@ -102,14 +102,15 @@ gen_data <- troph_data %>%
   right_join(gen_data) %>% 
   mutate(Site = factor(Site))
 
-Site_Pd <- data_frame(
-  Site = factor(unique(gen_data$Site)),
-  Pd = c(2.65, 2.65, 1.55, 1.55, 2.65, 2.65)
-)
+#Site_Pd <- data_frame(
+#  Site = factor(unique(gen_data$Site)),
+#  Pd = c(2.65, 2.65, 1.55, 1.55, 2.65, 2.65)
+#)
 
-gen_data %<>% left_join(Site_Pd, by = 'Site') %>%
-  mutate(WFPS = calc_wfps(Bulk_dens, Mois_cont, Pd)) %>%
-  select(Site:H_CH4_percent, WFPS, Bulk_dens, Mois_cont:PC3_16S_tr_cdna, -Pd)
+gen_data <-
+  gen_data %>% #left_join(Site_Pd, by = 'Site') %>%
+#  mutate(WFPS = calc_wfps(Bulk_dens, Mois_cont, Pd)) %>%
+  select(Site:H_CH4_percent, Bulk_dens, Mois_cont:PC3_16S_tr_cdna)
 
 # Gen Numeric data
 gen_num_data <- gen_data %>% 
@@ -120,7 +121,15 @@ num_predictors <- gen_num_data %>% dplyr::select(-CH4, -H_CH4_percent)
 
 # Attribute table
 gen_attr_table <- gen_data %>% 
-  select(-Rep, -Experiment, -Description, -Land_type, -Bulk_dens, -Mois_cont)
+  select(-Rep, -Experiment, -Description)
+
+# Remove extraneous attributes
+colnames(gen_attr_table)
+gen_attr_table <- gen_attr_table %>% 
+  select(Site:Copies)
+colnames(troph_attr_table)
+troph_attr_table <- troph_attr_table %>% 
+  select(Sample:pmoa_transcript_num)
 
 write_csv(gen_attr_table, '../output/gab_gen_attr_table.csv')
 

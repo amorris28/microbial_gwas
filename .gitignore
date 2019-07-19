@@ -18,3 +18,7 @@ Figures/
 *.Rhistory
 .deps
 *.Rout
+tables/
+R/Figs/
+*.html
+talapas-output/

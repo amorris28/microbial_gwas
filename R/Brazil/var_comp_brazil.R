@@ -1,12 +1,29 @@
 library(tidyverse)
 library(varComp)
 library(vegan)
-library(broom)
+#library(broom)
+#library(data.table)
 library(amorris)
 
-asv_table <- read.csv('output/asv_table.csv')
+
+## Import and organize data
+
+all_data <- read.table('../output/dim_cleaned_data.tsv', header = TRUE)
+#all_data <- fread('output/dim_cleaned_data.tsv')
+#all_data[1:nrow(all_data), 1:40]
+#colnames(all_data[, 1:40])
+#sum(is.na(all_data))
+all_data <- all_data[complete.cases(all_data$Lat), ]
+all_data <- all_data[complete.cases(all_data$Long), ]
+asv_table <- select(all_data, starts_with("asv"))
+asv_table[asv_table>0] <- 1 # Presence/Absence
+asv_mat <- as.matrix(asv_table)
+all_data <- all_data[rowSums(asv_mat) > 1, ]
+all_data <- cbind(all_data[, 1:39], all_data[, colnames(asv_mat[, colSums(asv_mat) > 1])])
+#all_data[1:nrow(all_data), 1:ncol(all_data)]
 
 ### Plot ASV abundances
+#
 #i = 2
 #j = ncol(asv_table)
 #  asv_table[, c(1, i:j)] %>% 
@@ -14,71 +31,49 @@ asv_table <- read.csv('output/asv_table.csv')
 #ggplot(aes(y = ABU, x = ASV)) +
 #  geom_jitter()  
 
-## Remove ASVs only present in 1 sample
-asvs <- asv_table[, -1] 
-asvs[asvs>0] <- 1
-asvs <- as.matrix(asvs)
-asv_table <- asv_table[rowSums(asvs) > 1, ]
-asv_mat <- as.matrix(asv_table[, 2:ncol(asv_table)])
 
-### High variance ASVs
+### Estimate and plot variation in ASV abundance
+#
 #ColVar <- function(x, ...) {
 #  colSums((x - colMeans(x, ...))^2, ...)/(dim(x)[2] - 1)
 #}
 #asv_mat_var <- ColVar(asv_mat)
+#plot(density(log10(asv_mat_var)))
 #asv_mat_high_var<-asv_mat[,log10(asv_mat_var) > 0]
 #ncol(asv_mat_high_var)
-#plot(density(log10(asv_mat_var)))
 #rowSums(asv_mat)
 #colSums(asv_mat)
+#asv_mat_ns <- asv_mat[rowSums(asv_mat) > 1, ]
 #asv_mat_ns <- asv_mat[, colSums(asv_mat) > 1]
-#colSums(asv_mat_ns)
 
-# Community similarity
-taxon <- asv_mat[, 3]
-com_dissim <- vegdist(asv_mat[, -3])
+
+
+# ASV matrix
+taxa <- select(select(all_data, starts_with('asv')), -1)
+# Pull out a single predictor taxon
+taxon <- taxa[, 5437]
+# Calculate similarity from all taxa except that one
+com_dissim <- vegdist(taxa[, -5437])
 com_dissim <- as.matrix(com_dissim)
 com_sim <- 1-com_dissim
 
-
-troph_attr_table <- read.csv('output/troph_attr_table.csv', stringsAsFactors = F)
-str(troph_attr_table)
-troph_attr_table$Site <- paste0(troph_attr_table$Site, 
-				reverse_substr(troph_attr_table$Sample, 3, 3))
-# Function
-lowk <- troph_attr_table$Low_final_k
-
-# Geographic similarity
-geodist <- read.table('output/geodist.tsv')
-troph_attr_table <- left_join(troph_attr_table, geodist, by = "Site")
-xy <- troph_attr_table[, c('X', 'Y')]
+# Methane flux response variable
+CH4 <- all_data$CH4
+hist(CH4)
+# Calculate geographic similarity from lat/long
+xy <- all_data[, c('Lat', 'Long')]
 geo_dis <- as.matrix(dist(as.matrix(scale(xy))))
 geo_sim <- 1/(1+geo_dis)
 
-# environmental dissimilarity
-env <- select(troph_attr_table, WFPS, N_percent, C_percent)
+# Calculate environmental similarity from environmental variables
+env <- select(all_data, pH:Total_moisture)
 env_dis <- as.matrix(dist(as.matrix(scale(env))))
 env_sim <- 1/(1+env_dis)
 
 
-model <- varComp(lowk ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
+model <- varComp(CH4 ~ taxon, varcov = list(com = com_sim, geo = geo_sim, env = env_sim) )
 summary(model)
-# Zero residual variance association with community similarity
-
-mantel(com_sim, geo_sim)
-qplot(x = xy$X, y = xy$Y)
-# Community and geography are correlated and sites cluster around three locations
-troph_attr_table[troph_attr_table$Y > 30000, 'geocode'] <- 'A'
-troph_attr_table[troph_attr_table$Y < 30000 & troph_attr_table$Y > 10000, 'geocode'] <- 'B'
-troph_attr_table[troph_attr_table$Y < 10000, 'geocode'] <- 'C'
-troph_attr_table$geocode
-qplot(x = xy$X, y = xy$Y) + geom_point(aes(color = troph_attr_table$geocode))
-sample <- troph_attr_table$Sample
-model <- varComp(Low_final_k ~ taxon, 
-                 data = troph_attr_table, 
-                 varcov = list(com = com_sim, env = env_sim) )
-summary(model)
-
+CH4
 
 for (i in 11:20) {
   taxon <- asv_mat_ns[, i]

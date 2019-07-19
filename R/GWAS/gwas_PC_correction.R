@@ -6,6 +6,8 @@
 #### similarity, and phenotype ~ environmental similarity
 #### See: Price et al. 2006 in Nature Genetics
 
+library(vegan)
+source('functions.R')
 # Whether to correct by each factor
 com_bool <- T
 env_bool <- T
@@ -20,8 +22,8 @@ scale_env <- T
 scale_spa <- T
 # File names
 input_sep <- ","
-input_file <- "output/troph_total.csv"
-output_file <- "output/gab_adj"
+input_file <- "../output/gab_troph_total.csv"
+output_file <- "../output/gab_adj"
 # Function column names
 fun_cols <- c('Low_final_k', 'Vmax')
 # Environment column names
@@ -33,7 +35,6 @@ com_cols <- 'asv'
 # Extra grouping variables to preserve
 group_cols <- c('Sample', 'Wetland', 'Site')
 
-library(vegan)
 
 all_data <- read.table(input_file, header = TRUE, sep = input_sep)
 
@@ -55,22 +56,6 @@ com_mat <- as.matrix(all_data[, grepl(com_cols, names(all_data))])
 fun_mat <- as.matrix(all_data[, fun_cols])
 fun_com <- cbind(fun_mat, com_mat)
 
-#### Functions
-pc_adjust_mat <- function(raw_mat, aj, n_axes) {
-  # raw_mat is the matrix of function and community
-  # aj is the matrix of site scores from PCA
-  # n_axes is the number of PC axes to correct by
-  gamma <- vector(length = nrow(raw_mat))
-	for (p in 1:n_axes) {
-    a <- aj[, p] # select axis n for correction
-    for (i in 1:ncol(raw_mat)) { # adjust each taxon abundance
-      tax <- raw_mat[, i] # select taxon abundances for j samples
-      gamma[i] <- sum(a * tax)/sum(a^2) # calculate gamma (regression coef)
-      raw_mat[, i] <- tax - gamma[i] * a 
-    }
-  }
-  return(raw_mat)
-}
 
 ### Community similarity correction
 if (com_bool) {
@@ -107,41 +92,43 @@ spa_aj <- summary(env_pca)$sites # pull out site scores, which represent
 if (com_bool) {
 # Community correction
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
-write.table(all_adj, paste0(output_file, '_com.tsv'))
+write.table(all_adj, paste0(output_file, '_c.tsv'))
 }
 
 if (env_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
-write.table(all_adj, paste0(output_file, '_env.tsv'))
+write.table(all_adj, paste0(output_file, '_e.tsv'))
 }
 
 if (spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, spa_aj, n_spa_axes) 
-write.table(all_adj, paste0(output_file, '_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_s.tsv'))
 }
 
 if (com_bool & env_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_env.tsv'))
+write.table(all_adj, paste0(output_file, '_ce.tsv'))
 }
 if (com_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_cs.tsv'))
 }
 if (env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_env_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_es.tsv'))
 }
 if (com_bool & env_bool & spa_bool) {
 all_adj <- pc_adjust_mat(fun_com, com_aj, n_com_axes) 
 all_adj <- pc_adjust_mat(all_adj, env_aj, n_env_axes) 
 all_adj <- pc_adjust_mat(all_adj, spa_aj, n_spa_axes) 
 all_adj <- cbind(all_data[, group_cols], all_adj)
-write.table(all_adj, paste0(output_file, '_com_env_spa.tsv'))
+write.table(all_adj, paste0(output_file, '_ces.tsv'))
 }
+
+write.table(all_data, paste0(output_file, '_raw.tsv'))

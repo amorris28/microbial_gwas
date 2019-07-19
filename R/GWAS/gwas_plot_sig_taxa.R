@@ -1,25 +1,10 @@
-library(tidyverse)
-library(xtable)
-# import model output
-by_asv_all <- readRDS('output/model_fits.rds')
-by_asv_raw <- readRDS('output/model_fits_raw.rds')
-by_asv_com <- readRDS('output/model_fits_com.rds')
-by_asv_env <- readRDS('output/model_fits_env.rds')
-by_asv_spa <- readRDS('output/model_fits_spa.rds')
 
 new_data <- read_csv('output/adj_data.csv')
-taxon_table <- read_csv('output/taxon_table.csv')
 
 alpha <- 0.05 / nrow(by_asv_all)
-# Identify ASVs with -log(p value) > 
-id_asvs <- function(by_asv, alpha, taxon_table, new_data, file_name) {
-lowk_asvs <- by_asv %>% 
-  mutate(tidy = map(model, broom::tidy)) %>% 
-  unnest(tidy) %>% 
-  filter(term == 'abund') %>% 
-  filter(-log10(p.value) > -log10(alpha)) %>% 
-  pull(asv)
 
+subset_sig_data <- function(
+, taxon_table, new_data, file_name
 # Pull out those ASVs
 important_asvs <- new_data %>% 
   select(Low_final_k, one_of(lowk_asvs))%>% 
@@ -29,7 +14,7 @@ taxon_table %>%
   select(-asv) %>%
   xtable() %>% 
   print.xtable(file = file_name)
-}
+
 
 id_asvs(by_asv_raw, alpha, taxon_table, new_data, file_name = "tables/table_rare_raw.tex")
 id_asvs(by_asv_env, alpha, taxon_table, new_data, file_name = "tables/table_rare_env.tex")

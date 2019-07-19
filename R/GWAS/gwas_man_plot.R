@@ -1,7 +1,8 @@
 library(tidyverse)
+source('functions.R')
 taxon_table <- read_csv('output/taxon_table.csv')
 lowk_by_asv <- readRDS('output/lowk_fits.rds')
-lowk_by_asv_com <- readRDS('output/lowk_fits_com.rds')
+lowk_by_asv_com <- readRDS('../output/lowk_fits_c.rds')
 lowk_by_asv_env <- readRDS('output/lowk_fits_env.rds')
 lowk_by_asv_raw <- readRDS('output/lowk_fits_raw.rds')
 lowk_by_asv_spa <- readRDS('output/lowk_fits_spa.rds')
@@ -11,29 +12,6 @@ vmax_by_asv_com <- readRDS('output/vmax_fits_com.rds')
 vmax_by_asv_env <- readRDS('output/vmax_fits_env.rds')
 vmax_by_asv_raw <- readRDS('output/vmax_fits_raw.rds')
 vmax_by_asv_spa <- readRDS('output/vmax_fits_spa.rds')
-# Create plotting function
-
-man_plot <- function(by_asv, taxon_table) {
-
-by_asv %>% 
-  mutate(tidy = map(model, broom::tidy)) %>% 
-  unnest(tidy) %>% 
-  filter(term == 'abund') %>%
-  left_join(taxon_table, by = 'asv') %>% 
-  ggplot(aes(x = reorder(asv, Phylum, median), y = -log10(p.value))) +
-  geom_point(aes(color=Phylum), size = 1) +
-  geom_hline(yintercept = -log10(0.05/nrow(by_asv))) +
-  scale_color_discrete(guide = F) +
-  labs(x = 'Amplicon Sequence Variant (ASV)', 
-       y = expression(Significance ~ (-log[10](p.value)))) +
-    #  geom_text_repel(aes(label=ifelse(-log10(p.value)>-log10(alpha),as.character(genus),'')), size = 1) +
-    # geom_text(aes(label=ifelse(-log10(p.value)>-log10(alpha),as.character(genus),'')), position = position_dodge(width = 10)) +
-  theme_classic() +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  ylim(0, 10)  %>% 
-  return()
-}
 
 # Create man plots for adjusted and un-adjusted abundances
 ggsave('figures/man_rare_all.pdf', plot = man_plot(by_asv, taxon_table), 
