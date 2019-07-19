@@ -18,7 +18,7 @@ knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
 library(tidyverse)
 #library(lubridate)
 library(broom)
-#library(broman)
+library(broman)
 #library(morris)
 library(varComp)
 library(vegan)
@@ -35,6 +35,7 @@ library(lmtest)
 
 num.cores <- detectCores()
 registerDoParallel(cores = 3)
+options(knitr.kable.NA = '')
 
 #+ r tree_analysis
 #tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
@@ -45,8 +46,6 @@ all_data <- data.table::fread('../output/gab_all_vst_troph.csv', data.table = FA
 gen_data <- data.table::fread('../output/gab_all_vst_gen.csv', data.table = FALSE)
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
-
-all_data <- all_data[all_data$Wetland == 'Upland', ]
 
 ## Remove ASVs only present in 1 sample
 remove_asvs_in_1_sample <- function(dataset) {
@@ -82,23 +81,23 @@ screeplot(geo_pca)
 summary(geo_pca)
 all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
 
-pca <- rda(as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))]))
-screeplot(pca)
-head(summary(pca))
-gen_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
-gen_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
-gen_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
-
-env_pca <- rda(as.matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')]))
-screeplot(env_pca)
-head(summary(env_pca))
-gen_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
-gen_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
-
-geo_pca <- rda(as.matrix(gen_data[, c('X', 'Y')]))
-screeplot(geo_pca)
-summary(geo_pca)
-gen_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
+#pca <- rda(as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))]))
+#screeplot(pca)
+#head(summary(pca))
+#gen_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+#gen_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+#gen_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+#
+#env_pca <- rda(as.matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')]))
+#screeplot(env_pca)
+#head(summary(env_pca))
+#gen_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
+#gen_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
+#
+#geo_pca <- rda(as.matrix(gen_data[, c('X', 'Y')]))
+#screeplot(geo_pca)
+#summary(geo_pca)
+#gen_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
 
 #+ r sim_mat
 
@@ -107,35 +106,33 @@ calc_sim_matrix <- function(x) {
 }
 
 
-# Community similarity
-asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-x <- 3
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "bray"))
-com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -c(x)], method = "jaccard", binary = TRUE))
+## Community similarity
+#asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+#x <- 3
+#asv <- asvs[, x]
+#asv_tax <- colnames(asvs)[x]
+com_sim <- 1 - as.matrix(vegdist(asvs, method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs, method = "jaccard", binary = TRUE))
 
 # Geographic similarity
 geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
-with(all_data, qplot(X, Y))
-qplot(c(geo_sim))
 
 # environmental similarity'
 env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-# com similarity gen
-asvs_gen <- as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))])
-
-x <- 3
-asv <- asvs_gen[, x]
-asv_tax <- colnames(asvs_gen)[x]
-com_sim_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "bray"))
-com_sim_bin_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "jaccard", binary = TRUE))
-
-# Geographic similarity
-geo_sim_gen <- calc_sim_matrix(gen_data[, c('X', 'Y')])
-with(gen_data, qplot(X, Y))
-qplot(c(geo_sim_gen))
+## com similarity gen
+#asvs_gen <- as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))])
+#
+#x <- 3
+#asv <- asvs_gen[, x]
+#asv_tax <- colnames(asvs_gen)[x]
+#com_sim_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "bray"))
+#com_sim_bin_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "jaccard", binary = TRUE))
+#
+## Geographic similarity
+#geo_sim_gen <- calc_sim_matrix(gen_data[, c('X', 'Y')])
+#with(gen_data, qplot(X, Y))
+#qplot(c(geo_sim_gen))
 
 ## spatial smoothing function boondoggle
 #qplot(x = X, y = Y, data = all_data) + 
@@ -150,7 +147,7 @@ qplot(c(geo_sim_gen))
 #  geom_line(aes(y = fitted), color = 'red')
 #plot(fitted)
 # environmental similarity'
-env_sim_gen <- calc_sim_matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')])
+#env_sim_gen <- calc_sim_matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')])
 
 #' # Overview
 #' 
@@ -238,24 +235,7 @@ taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[
                           (length(r)-0)}
                                       ] }
        )
-hist(my_model_output[my_model_output$comps == 'e', 'p.value'])
-head(my_model_output)
-myqs <- qvalue(my_model_output[my_model_output$comps == 'gce', 'p.value'], fdr.level = 0.1)
-myqs$pi0
-summary(myqs)
-hist(myqs)
-plot(myqs)
-myqs
-filter(taxon_table, asv %in% my_model_output[my_model_output$comps == 'e' & myqs$significant == TRUE, 'asv'])
 
-suppressMessages(system.time(my_asvs_com <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind') %dopar% {
-asv_tax <- colnames(asvs)[i]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -i]))
-model <- varComp(Low_final_k ~  asvs[, i] + Mois_cont + N_percent + C_percent + Bulk_dens + geocode, data = all_data, ~ cholRoot(com_sim):geocode)
-bind_cols(tibble(asv = asv_tax) , as_tibble(as.list(c(p.value = anova(model)$`Pr(>F)`[2], F.value = anova(model)$`F value`[2], 
-h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = F))))))
-}
-))
 #+ trad_correlations
 
 colnames(all_data[, 1:13])
@@ -263,12 +243,12 @@ colnames(all_data[, 1:13])
 print(ggplot(all_data, aes(x = X, y = Y)) + 
   geom_point(aes(color = all_data$Wetland)) +
   labs(title = "Distribution of sites highlighted by wetland or upland"))
-
-ggplot(all_data, aes(x = Vmax, y = Low_final_k)) + geom_point()
-
 ggplot(all_data, aes(x = pmoa_copy_num, y = Low_final_k)) +
   geom_point() +
-  geom_smooth(method = 'lm')
+  geom_smooth(method = 'lm') +
+  theme_classic() +
+  labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation')) + 
+  ggsave(file = '../Figures/lowk_pmoa.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ pmoa_copy_num, data = all_data))
 
 ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
@@ -276,32 +256,19 @@ ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
   geom_smooth(method = 'lm')
 summary(lm(Vmax ~ pmoa_copy_num, data = all_data))
 
-adonis(asvs ~ all_data$Wetland)
-
-
 ggplot(all_data, aes(color = Wetland)) +
   geom_point(aes(x = pc1, y = pc2))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = pc1, y = pc3))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = pc2, y = pc3))
 
 ggplot(all_data, aes(color = geocode)) +
   geom_point(aes(x = pc1, y = pc2))
-ggplot(all_data, aes(color = geocode)) +
-  geom_point(aes(x = pc1, y = pc3))
-ggplot(all_data, aes(color = geocode)) +
-  geom_point(aes(x = pc2, y = pc3))
 
-ggplot(all_data[all_data$pc1 < 0,], aes(x = pc1, y = Low_final_k)) +
+ggplot(all_data, aes(x = pc1, y = Low_final_k)) +
        geom_point() +
-       geom_smooth(method = 'lm')
+       geom_smooth(method = 'lm') +
+  theme_classic() +
+  labs(x = 'PC1', y = expression('Methane oxidation')) + 
+  ggsave(file = '../Figures/lowk_pc1.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ pc1, data = all_data))
-
-ggplot(all_data, aes(x = pc1, y = Vmax)) +
-       geom_point() +
-       geom_smooth(method = 'lm')
-summary(lm(Vmax ~ pc1, data = all_data))
 
 #my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
 #          score = scores(pca)$species[, 'PC1'])
@@ -311,47 +278,12 @@ summary(lm(Vmax ~ pc1, data = all_data))
 #  kable(digits = 2) %>% 
 #  kable_styling()
 
-ggplot(all_data, aes(x = pc2, y = Low_final_k)) +
-       geom_point() +
-       geom_smooth(method = 'lm')
-summary(lm(Low_final_k ~ pc2, data = all_data))
-
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = env_pc1, y = env_pc2))
-ggplot(all_data, aes(color = geocode)) +
-  geom_point(aes(x = env_pc1, y = env_pc2))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = env_pc1, y = Mois_cont))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = env_pc1, y = C_percent))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = env_pc1, y = N_percent))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = env_pc1, y = Bulk_dens))
-ggplot(all_data, aes(x = Wetland, y = env_pc1)) +
-  geom_boxplot() + 
-  geom_jitter()
-summary(lm(env_pc1 ~ Wetland, all_data))
-ggplot(all_data, aes(x = Wetland, y = Mois_cont)) +
-  geom_boxplot() + 
-  geom_jitter(aes(color = Site))
-summary(lm(Mois_cont ~ Wetland, all_data))
 ## Spatial PCA
-
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = geo_pc1, y = Low_final_k))
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = geo_pc1, y = Mois_cont))
 
 ggplot(all_data, aes(x = Wetland, y = Low_final_k)) +
        geom_boxplot() +
        geom_jitter()
 summary(lm(Low_final_k ~ Wetland, data = all_data))
-
-ggplot(all_data, aes(x = Mois_cont, y = Low_final_k)) +
-       geom_point() +
-       geom_smooth(method = 'lm')
-summary(lm(Vmax ~ Mois_cont, data = all_data))
 
 com_matrix <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
 all_data$richness <- rowSums(com_matrix > 0)
@@ -360,19 +292,20 @@ all_data$simpson <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_
 
 ggplot(data = all_data, aes(x = richness, y = Low_final_k)) +
   geom_point() +
-  geom_smooth(method = 'lm')
+  geom_smooth(method = 'lm') +
+  theme_classic() +
+  labs(x = 'Richness', y = expression('Methane oxidation')) + 
+  ggsave(file = '../Figures/lowk_rich.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ richness, data = all_data))
-
-ggplot(data = all_data, aes(x = richness, y = Vmax)) +
-  geom_point() +
-  geom_smooth(method = 'lm')
-summary(lm(Vmax ~ richness, data = all_data))
 
 # Low K and Shannon, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
   geom_point() +
-  geom_smooth(method = 'lm')
+  geom_smooth(method = 'lm') +
+  theme_classic() +
+  labs(x = 'Shannon Diversity', y = expression('Methane oxidation')) + 
+  ggsave(file = '../Figures/lowk_shan.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ shannon, data = all_data))
 
 ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k)) +
@@ -380,19 +313,6 @@ ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k
   geom_smooth(method = 'lm') + 
   labs(title = "Without sample 26")
 summary(lm(Low_final_k ~ shannon, data = all_data[all_data$shannon > 5, ]))
-
-# V max and Shannon, w/ and w/o outlier
-
-ggplot(data = all_data, aes(x = shannon, y = Vmax)) +
-  geom_point() +
-  geom_smooth(method = 'lm')
-summary(lm(Vmax ~ shannon, data = all_data))
-
-ggplot(data = all_data[all_data$shannon > 6, ], aes(x = shannon, y = Vmax)) +
-  geom_point() +
-  geom_smooth(method = 'lm') + 
-  labs(title = "Without sample 1 and 26")
-summary(lm(Vmax ~ shannon, data = all_data[all_data$shannon > 6, ]))
 
 # Low k and Simpson, w/ and w/o outlier
 
@@ -406,21 +326,6 @@ ggplot(data = all_data[all_data$simpson > 0.998, ], aes(x = simpson, y = Low_fin
   geom_smooth(method = 'lm') + 
   labs(title = "Without sample 1 and 26")
 summary(lm(Low_final_k ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
-
-# Vmax and simpson, w/ and w/o outlier
-
-ggplot(data = all_data, aes(x = simpson, y = Vmax)) +
-  geom_point() +
-  geom_smooth(method = 'lm')
-summary(lm(Vmax ~ simpson, data = all_data))
-
-ggplot(data = all_data[all_data$simpson > 0.998, ], aes(x = simpson, y = Vmax)) +
-  geom_point() +
-  geom_smooth(method = 'lm') + 
-  labs(title = "Without sample 1 and 26")
-summary(lm(Vmax ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
-
-
 
 #'
 #' ## Summary of correlations
@@ -581,10 +486,10 @@ geo_sim <- calc_sim_matrix(dry_data[, c('X', 'Y')])
 # environmental similarity'
 env_sim <- calc_sim_matrix(dry_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 
-asv <- asvs[, x]
-asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
-com_sim_bin <- 1 - as.matrix(vegdist(asvs[, -x], method = 'jaccard', binary = TRUE))
+#asv <- asvs[, x]
+#asv_tax <- colnames(asvs)[x]
+com_sim <- 1 - as.matrix(vegdist(asvs))
+com_sim_bin <- 1 - as.matrix(vegdist(asvs, method = 'jaccard', binary = TRUE))
 
 pca <- rda(as.matrix(dry_data[, grepl("^[asv]", colnames(dry_data))]))
 screeplot(pca)
@@ -613,56 +518,246 @@ print(mantel(geo_sim, env_sim))
 
 varcomp_diag(dry_data)
 
-#' # Model
+#' # Variance Components
 
-#+ r model
+#+ r variance components
+model_data <- all_data
+com <- cholRoot(com_sim)
+geo <- model_data$geocode
+geo <- cholRoot(geo_sim)
+env <- cholRoot(env_sim)
 
+var_comp_pvalues <- data.frame(model = 
+                               c('CH4 \\textasciitilde 1 + com', 
+                                 'CH4 \\textasciitilde 1 + geo', 
+                                 'CH4 \\textasciitilde 1 + env', 
+                                 'CH4 \\textasciitilde 1 + geo + com', 
+                                 'CH4 \\textasciitilde 1 + geo + com', 
+                                 'CH4 \\textasciitilde 1 + geo + env', 
+                                 'CH4 \\textasciitilde 1 + geo + env', 
+                                 'CH4 \\textasciitilde 1 + com + env', 
+                                 'CH4 \\textasciitilde 1 + com + env', 
+                                 'CH4 \\textasciitilde 1 + geo + com + env', 
+                                 'CH4 \\textasciitilde 1 + geo + com + env', 
+                                 'CH4 \\textasciitilde 1 + geo + com + env'),
+           component = c('com', 'geo', 'env', 'geo', 'com', 'env', 'geo', 'com', 'env', 'env', 'geo', 'com'),
+           varcomp = NA,
+           se = NA,
+           p.value = NA)
 
+# Single
+# Com
+fit0 <- varComp(Low_final_k ~ 1, data = model_data)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[1] <- comps$h2G
+var_comp_pvalues$se[1] <- sqrt(comps$Varh2G)
+
+var_comp_pvalues$p.value[1] = p.value(varComp.test(fit, fit0))
+
+# Geo
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[2] <- comps$h2G
+var_comp_pvalues$se[2] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[2] = p.value(varComp.test(fit, fit0))
+
+# Env
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[3] <- comps$h2G
+var_comp_pvalues$se[3] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[3] = p.value(varComp.test(fit, fit0))
+
+# Geo Com
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[4] <- comps$h2GE
+var_comp_pvalues$se[4] <- sqrt(comps$Varh2GE)
+var_comp_pvalues$p.value[4] = p.value(varComp.test(fit, fit0))
+
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[5] <- comps$h2G
+var_comp_pvalues$se[5] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[5] = p.value(varComp.test(fit, fit0))
+
+# Geo Env
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[6] <- comps$h2GE
+var_comp_pvalues$se[6] <- sqrt(comps$Varh2GE)
+var_comp_pvalues$p.value[6] = p.value(varComp.test(fit, fit0))
+
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[7] <- comps$h2G
+var_comp_pvalues$se[7] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[7] = p.value(varComp.test(fit, fit0))
+
+# Com Env
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[8] <- comps$h2G
+var_comp_pvalues$se[8] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[8] = p.value(varComp.test(fit, fit0))
+
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[9] <- comps$h2GE
+var_comp_pvalues$se[9] <- sqrt(comps$Varh2GE)
+var_comp_pvalues$p.value[9] = p.value(varComp.test(fit, fit0))
+
+# Geo Com Env
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[10] <- comps$h2GE[2]
+var_comp_pvalues$se[10] <- sqrt(comps$Varh2GE[2])
+var_comp_pvalues$p.value[10] = p.value(varComp.test(fit, fit0))
+
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[11] <- comps$h2GE[1]
+var_comp_pvalues$se[11] <- sqrt(comps$Varh2GE[1])
+var_comp_pvalues$p.value[11] = p.value(varComp.test(fit, fit0))
+
+fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
+fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+comps <- varCompGE(fit)
+var_comp_pvalues$varcomp[12] <- comps$h2G
+var_comp_pvalues$se[12] <- sqrt(comps$Varh2G)
+var_comp_pvalues$p.value[12] = p.value(varComp.test(fit, fit0))
+
+var_comp_pvalues$varcomp <- paste0(myround(var_comp_pvalues$varcomp, 2), ' (',
+                                   myround(var_comp_pvalues$se, 2), ')')
+
+var_comp_pvalues$p.value <- 
+  c(formatC(var_comp_pvalues$p.value[c(1)], format = "e", digits = 2), 
+    myround(var_comp_pvalues$p.value[2:7], 3),
+    formatC(var_comp_pvalues$p.value[c(8)], format = "e", digits = 2),
+    myround(var_comp_pvalues$p.value[9:12], 3))
+var_comp_pvalues[c(1, 2, 3, 7, 8), 5] <- 
+  cell_spec(var_comp_pvalues[c(1, 2, 3, 7, 8), 5],  "latex", bold = T)
+#var_comp_pvalues[12, 5] <- 
+#  cell_spec(var_comp_pvalues[12,5],  "latex", italic = T)
+var_comp_pvalues <- var_comp_pvalues[, -4]
+
+var_comp_pvalues %>% 
+  kable('latex', booktabs = T, digits = 2, escape = F,
+        caption = paste0('Variance component estimates from intercept-only models predicting the rate of high-affinity methane oxidation from soil. p-values
+        determined by linear score test comparing nested models with and without
+        each variance component. Significant p-values are bolded (p \\textless{} 0.05). 
+        n = ', nrow(model_data), '.'), 
+        col.names = c('Model', 'Component', 'Estimate (SE)', 'p-value')) %>% 
+  collapse_rows(columns = 1) %>% 
+#  save_kable(file = '../tables/dry_var_comp_pvalues.pdf', keep_tex = TRUE)
+  writeLines('../tables/var_comp_pvalues.tex')
 
 #' # Analyze model output
 
-
 #+ r analyze_model_output
-
-
-
-
-my_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out.csv'))
+cell_spec
+all_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out.csv'))
 wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_wet.csv'))
 dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
-
-
+dry_model_output_bin <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_bin.csv'))
+dry_model_output_geo <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_geo.csv'))
 
 #' ## Variance components
 
 #+ r variance_components
-my_model_output %>% 
+all_model_output %>% 
   group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
+  summarize_at(vars(geo, com, env, err), mean) %>% 
   kable(caption = "Variance components for all data",
-        col.names = c('Components', 'Community', 'Environment', 'Error'),
+        col.names = c('Components', 'Geography', 'Community', 'Environment', 'Error'),
         digits = 2) %>% 
   kable_styling()
 
 wet_model_output %>% 
   group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
+  summarize_at(vars(geo, com, env, err), mean) %>% 
   kable(caption = "Variance components for wetland data",
-        col.names = c('Components', 'Community', 'Environment', 'Error'),
+        col.names = c('Components', 'Geography', 'Community', 'Environment', 'Error'),
         digits = 2) %>% 
-  kable_styling()
+  kable_styling() %>% 
+  save_kable(file = '../tables/wet_var_comps.html')
 
 dry_model_output %>% 
   group_by(comps) %>% 
-  summarize_at(vars(com, env, err), mean) %>% 
-  kable(caption = "Variance components for upland data",
-        col.names = c('Components', 'Community', 'Environment', 'Error'),
+  summarize_at(vars(geo, com, env, err), mean) %>% 
+  kable("latex", booktabs = T, caption = "Variance components for upland data",
+        col.names = c('Components', 'Geography', 'Community', 'Environment', 'Error'),
         digits = 2) %>% 
+  writeLines('../tables/dry_var_comps.tex')
+
+dry_model_output_bin %>% 
+  group_by(comps) %>% 
+  summarize_at(vars(geo, com, env, err), mean) %>% 
+  kable(caption = "Variance components for binary upland data",
+        col.names = c('Components', 'Geography', 'Community', 'Environment', 'Error'),
+        digits = 2, format = 'latex') %>% 
   kable_styling()
 
 #' ## Number of taxa identified with each covariate
 
+for (i in unique(all_model_output$comps)) {
+  print(i)
+my_qs <- qvalue(all_model_output$p.value[all_model_output$comps == i])
+summary(my_qs)
+all_model_output$qvalues[all_model_output$comps == i] <- my_qs$qvalues
+}
+ggplot(all_model_output, aes(x = p.value)) +
+  facet_wrap(~ comps) +
+  geom_histogram()
+
+for (i in unique(dry_model_output$comps)) {
+  print(i)
+my_qs <- qvalue(dry_model_output$p.value[dry_model_output$comps == i])
+summary(my_qs)
+dry_model_output$qvalues[dry_model_output$comps == i] <- my_qs$qvalues
+}
+nrow(dry_model_output)
+
+
+for (i in unique(dry_model_output_bin$comps)) {
+  print(i)
+my_qs <- qvalue(dry_model_output_bin$p.value[dry_model_output_bin$comps == i])
+summary(my_qs)
+dry_model_output_bin$qvalues[dry_model_output_bin$comps == i] <- my_qs$qvalues
+}
+nrow(dry_model_output_bin)
+
+for (i in unique(wet_model_output$comps)) {
+  print(i)
+my_qs <- qvalue(wet_model_output$p.value[wet_model_output$comps == i])
+summary(my_qs)
+wet_model_output$qvalues[wet_model_output$comps == i] <- my_qs$qvalues
+}
+nrow(wet_model_output)
+
+for (i in unique(dry_model_output_geo$comps)) {
+  print(i)
+my_qs <- qvalue(dry_model_output_geo$p.value[dry_model_output_geo$comps == i])
+summary(my_qs)
+dry_model_output_geo$qvalues[dry_model_output_geo$comps == i] <- my_qs$qvalues
+}
 #+ r n_taxa_ided
+
+n_taxa <- 
+all_model_output %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05)  %>% 
+  summarize(count = length(unique(asv)))
 
 my_model_output %>% 
   left_join(taxon_table) %>% 
@@ -680,16 +775,37 @@ wet_model_output %>%
   summarize(count = length(unique(asv))) %>% 
   kable(caption = "N taxa identified with wetland data",
         col.names = c('Components', 'Count')) %>% 
-  kable_styling()
+  kable_styling() 
+
+n_taxa <- 
+wet_model_output %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
+  summarize(count = length(unique(asv)))
 
 dry_model_output %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
-  filter(p.value <= 0.05 / length(unique(asv)))  %>% 
-  summarize(count = length(unique(asv))) %>% 
-  kable(caption = "N taxa identified with upland data",
-        col.names = c('Components', 'Count')) %>% 
-  kable_styling()
+  filter(qvalues < 0.05)  %>% 
+  summarize(count = length(unique(asv))) %>%
+  kable('latex', booktabs = TRUE, caption = "N taxa identified with upland data",
+        col.names = c('Components', 'Count'))
+
+
+n_taxa <- 
+dry_model_output %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05)  %>% 
+  summarize(count = length(unique(asv)))
+
+n_taxa <- 
+dry_model_output_geo %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05)  %>% 
+  summarize(count = length(unique(asv)))
 
 #' ## Taxa identified with each covariate
 
@@ -719,37 +835,8 @@ plot(euler(asvs))
 #' ### All Data Model
 
 #+ r all_taxa
+
 my_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
-  kable() %>% 
-  kable_styling() %>% 
-  collapse_rows(columns = 1)
-
-
-#' ### Wetland Model
-
-#+ r wetland_taxa
-
-wet_model_output  %>% 
-  left_join(taxon_table) %>% 
-group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
-  kable() %>% 
-  kable_styling() #%>% 
-#  collapse_rows(columns = 1)
-
-
-#' ### Upland Model
-
-#+ r upland_taxa
-
-dry_model_output  %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
@@ -758,6 +845,260 @@ dry_model_output  %>%
   kable() %>% 
   kable_styling() %>% 
   collapse_rows(columns = 1)
+
+sig_taxa_all <- 
+all_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
+  ungroup()
+
+colnames(sig_taxa_all)
+sig_taxa_all %>% 
+  filter(comps == 'gce')  %>% 
+  select(Phylum:Genus) %>% 
+  kable('latex', booktabs = T, caption = 'Taxa significantly correlated with
+        high-affinity methane oxidation rate after controlling for geographic
+        proximity, environmental similarity, and community structure. 
+        Significance determined by controlling
+        the false discovery rate (q \\textless{} 0.05).') %>% 
+  writeLines('../tables/all_taxa_sig.tex')
+
+
+sum(pull(sig_taxa_all[sig_taxa_all$comps == 'e', ], asv) %in% pull(sig_taxa_all[sig_taxa_all$comps == 'n', ], asv))
+
+n_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'n', ], asv)
+g_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'g', ], asv)
+c_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'c', ], asv)
+e_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'e', ], asv)
+gc_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'gc', ], asv)
+ge_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'ge', ], asv)
+ce_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'ce', ], asv)
+gce_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'gce', ], asv)
+
+comp_adds_removes <- 
+data.frame(
+           comps = c('none', 'geo', 'com', 'env', 'geo + com', 'geo + env', 'com + env', 'geo + com + env'), 
+           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
+                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
+                       sum(!n_ %in% gce_)),
+           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
+                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
+                       sum(!gce_ %in% n_)),
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
+                     length(gc_), length(ce_), length(gce_)))
+
+comp_adds_removes %>% 
+  kable('latex', booktabs = TRUE, 
+        caption = paste0("Number of taxa correlated with high-affinity
+                         methane oxidiation. Tested ", 
+                         length(unique(all_model_output$asv)), " taxa.
+        Significant taxa determined by controlling the false-discovery rate
+        (q \\textless{} 0.05). n = ", nrow(all_data)),
+        col.names = c('Components', 'Removed', 'Added', 'Significant')) %>% 
+  kable_styling() %>% 
+  writeLines('../tables/all_taxa_n.tex')
+
+# Shared
+
+sum(!g_ %in% ce_)
+sum(!ce_ %in% g_)
+sum(!c_ %in% e_)
+sum(!c_ %in% e_)
+
+comp_shared <- 
+data.frame(
+           comps = c('c in g', 'c in e', 'c in gc', 'c in ge', 'c in ce', 'c in gce', 
+                     'g in c', 'g in e', 'g in gc', 'g in ge', 'g in ce', 'g in gce',
+                     'e in c', 'e in c', 'e in gc', 'e in ge', 'e in ce', 'e in gce'),
+           comparisons = c(sum(!c_ %in% g_), sum(!c_ %in% e_), sum(!c_ %in% gc_), 
+                       sum(!c_ %in% ge_), sum(!c_ %in% ce_), sum(!c_ %in% gce_), 
+                       sum(!g_ %in% e_), sum(!g_ %in% ge_), sum(!g_ %in% gc_)),
+           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
+                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
+                       sum(!gce_ %in% n_)),
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
+                     length(gc_), length(ce_), length(gce_)))
+
+#' ### Wetland Model
+
+#+ r wetland_taxa
+
+wet_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
+  kable() %>% 
+  kable_styling() #%>% 
+#  collapse_rows(columns = 1)
+
+sig_taxa_wet <- 
+wet_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus)
+
+sum(pull(sig_taxa_wet[sig_taxa_wet$comps == 'e', ], asv) %in% pull(sig_taxa_wet[sig_taxa_wet$comps == 'n', ], asv))
+
+n_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'n', ], asv)
+g_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'g', ], asv)
+c_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'c', ], asv)
+e_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'e', ], asv)
+gc_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'gc', ], asv)
+ge_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'ge', ], asv)
+ce_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'ce', ], asv)
+gce_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'gce', ], asv)
+
+comp_adds_removes <- 
+data.frame(
+           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
+           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
+                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
+                       sum(!n_ %in% gce_)),
+           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
+                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
+                       sum(!gce_ %in% n_)),
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
+                     length(gc_), length(ce_), length(gce_)))
+
+#' ### Upland Model
+
+#+ r upland_taxa
+
+dry_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
+  kable() %>% 
+  kable_styling() %>% 
+#  collapse_rows(columns = 1) %>% 
+  save_kable(file = '../tables/dry_taxa_qvalue.html')
+
+sig_taxa_dry_geo <- 
+dry_model_output_geo  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus)
+
+sig_taxa_dry <- 
+dry_model_output  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus)
+
+
+n_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'n', ], asv)
+g_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'g', ], asv)
+c_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'c', ], asv)
+e_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'e', ], asv)
+gc_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gc', ], asv)
+ge_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ge', ], asv)
+ce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ce', ], asv)
+gce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gce', ], asv)
+
+comp_adds_removes <- 
+data.frame(
+           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
+           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
+                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
+                       sum(!n_ %in% gce_)),
+           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
+                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
+                       sum(!gce_ %in% n_)),
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
+                     length(ge_), length(ce_), length(gce_)))
+#comp_adds_removes$math <- 124 - comp_adds_removes$removed + comp_adds_removes$added
+comp_adds_removes %>% 
+  kable('latex', booktabs = T, caption = "N taxa identified with upland data",
+        col.names = c('Components', 'Removed', 'Added', 'Significant')) %>% 
+  kable_styling() %>% 
+  writeLines('../tables/dry_taxa_n.tex')
+#' ### Binary Upland Model
+
+#+ r upland_taxa
+
+dry_model_output_bin  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05) %>% 
+  select(comps, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
+  kable() %>% 
+  kable_styling() %>% 
+#  collapse_rows(columns = 1) %>% 
+  save_kable(file = '../tables/dry_taxa_qvalue_bin.html')
+
+sig_taxa_dry <- 
+dry_model_output_bin  %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus)
+
+
+n_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'n', ], asv)
+g_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'g', ], asv)
+c_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'c', ], asv)
+e_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'e', ], asv)
+gc_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gc', ], asv)
+ge_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ge', ], asv)
+ce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ce', ], asv)
+gce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gce', ], asv)
+
+comp_adds_removes <- 
+data.frame(
+           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
+           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
+                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
+                       sum(!n_ %in% gce_)),
+           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
+                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
+                       sum(!gce_ %in% n_)),
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
+                     length(ge_), length(ce_), length(gce_)))
+#comp_adds_removes$math <- 124 - comp_adds_removes$removed + comp_adds_removes$added
+comp_adds_removes %>% 
+  kable(caption = "N taxa identified with binary upland data",
+        col.names = c('Components', 'Removed', 'Added', 'n Significant')) %>% 
+  kable_styling() %>% 
+  save_kable(file = '../tables/dry_taxa_n_qvalue_bin.html')
+
+#cbind(added = rep('a', 50), sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'e', ], asv), ]),
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'c', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'g', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'gc', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'ge', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'ce', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'gce', ], asv), ])
+#
+#sig_taxa[sig_taxa$comps == 'e', ][!pull(sig_taxa[sig_taxa$comps == 'e', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'c', ][!pull(sig_taxa[sig_taxa$comps == 'c', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#sig_taxa[sig_taxa$comps == 'g', ][!pull(sig_taxa[sig_taxa$comps == 'g', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#
+#sig_taxa[sig_taxa$comps == 'gc', ][!pull(sig_taxa[sig_taxa$comps == 'gc', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#
+#sig_taxa[sig_taxa$comps == 'ge', ][!pull(sig_taxa[sig_taxa$comps == 'ge', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#
+#sig_taxa[sig_taxa$comps == 'ce', ][!pull(sig_taxa[sig_taxa$comps == 'ce', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
+#
+#sig_taxa[sig_taxa$comps == 'gce', ][!pull(sig_taxa[sig_taxa$comps == 'gce', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ])
+#)
+#
+#
+#
 
 
 
