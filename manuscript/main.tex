@@ -158,94 +158,111 @@ In order to do this, microbial ecologists should incorporate similar
 methodological and statistical approaches as population geneticists in order to
 make robust associations between microbes and ecosystem function.
 
-Population geneticists trying to make robust associations between genetic loci
-and phenotype must consider several points when designing a genome-wide
-association study. First is
-to identify the precise trait expected to be influenced by genetic variation. 
-Then, to choose a population that exhibits
-substantial variation in the trait of interest. This population should also be
-otherwise relatively homogeneous to avoid other factors that might influence the
-trait. After sampling, statistical methods should take into account population
-stratification due to shared ancestry or local selection that can lead to spurious
-associations between genes and traits. For example, both human height and
-genotype vary systematically across Europe in a latitudinal gradient, which can
-lead to spurious genotype-phenotype associations \citep{novembre2008}. 
-
-Positive associations between genes and
+Population geneticists make robust associations between genetic loci
+and phenotypes by carefully considering study design when performing a genome-wide
+association study. Studies should consider that positive associations between genes and
 phenotypes can arise because of true associations, through linkage
-disequilibrium with true genes, or through admixture \citep{lander1994}.
-Microbial structure-function connections could pose these same problems. There
-could be true associations between a microorganism and the ecosystem function
-performed by that taxon, or there could be systematic
-co-occurrence patterns between one taxon and a causal taxon,
-or there could be admixture due to shared history or selection within
-a subset of ecosystems. This is true for 16S amplicons and for
-genes in metagenomic (or other -omic) datsets. 
-Robust structure-function associations rely on
-controlling for the underlying geographic and ecological covariance.
+disequilibrium with true genes, or through admixture where traits at high
+frequency in a sub-population will be associated with any allele more common in
+that group \citep{lander1994}. A common example of admixture is that human height and
+genotype vary systematically across Europe in a latitudinal gradient, which can
+lead to spurious genotype-phenotype associations \citep{novembre2008}. To
+correct for this, it is
+imporant to sample from a population that exhibits variation in the trait of
+interest, but is otherwise relatively homogeneous
+to avoid spurious associations due to admixture. In addition, it is important to standardize phenotyping
+criteria to provide a narrowly defined trait. While certain genetic diseases are
+controlled by only one or a few genetic loci, common diseases tend to be
+controlled by many common variants of small effect. To detect these
+associations requires large sample sizes for association tests. After
+sampling the genotype and phenotype of this population, association tests should
+adjust for population stratification using covariates, which are commonly
+variables like sex and age as well as shared ancestry based on
+genotypic similarity. Finally, after comparing thousands or millions of genetic
+loci, investigators should correct for multiple comparisons.
 
-Organisms exhibit population differentiation due to geographic and ecological
-processes \citep{wright1943}. Neutral processes such as local genetic drift and
-reduced gene flow due to geographic separation can lead to population
-differentiation. In addition, environmental distance can lead to selection
-against migrants \citep{hendry2004} and local selection on endemic populations
-to generate variation. Microorganisms also exhibit biogeographic patterns due to
-ecological selection and geographic separation \citep{martiny2006}. If dispersal
-is non-limiting then the most productive species should always be present and
-composition should not matter for local ecosystem function. However, if important
-functional groups are dispersal-limited, lost to drift, or are unable to
-colonize a site, then there could be important functional consequences of
-community differentiation due to geographic or ecological isolation.
+Studies attempting to link microbial community structure to ecosystem function
+could pose similar challenges. In this case, individual taxa are analogous to
+genetic loci and their abundance or presence can be association with the rate of 
+ecosystem function. There
+could be true associations between a microorganism and the ecosystem function if
+that organism is involved in the metabolic pathway producing that function.
+Alternatively, there 
+could be systematic co-occurrence patterns between a taxon and ecosystem
+function due to admixture if that organism tends to reside in ecosystems with
+high rates of ecosystem function.
 
-There are a number of ways that environmental or spatial distance could obscure
-microbial BEF relationships. For example, historical effects of geographic
-isolation such as dispersal limitation could lead to spurious associations
-between the abundance of taxa and the rate of ecosystem function. Community
-stratification where taxa co-occur due to historical effects or local selection.
-Environmental selection can also shape microbial community
-structure. For example, pH is known to regulate both broad biodiversity patterns for
-microbial communities \citep{fierer2006} and methane cycling dynamics
-\citep{ye2012}. This could lead to microbial taxa that are correlated with
-methane cycling, but are mechanistically unrelated. In fact, if the rate of
+Microbial admixture could arise through a
+number of ecological mechanisms illustrated in conceptual diagram 1. For
+example, an environmental condition such as pH could contribute to a high rate
+of ecosystem function and select for a taxon even if that taxon is unrelated to
+function. An association could also arise if an organism disperses from a
+low-rate ecosystem to an ecosystem with a high rate of ecosystem function
+through source-sink dynamics. In fact, if the rate of
 ecosystem function is high in one set of ecosystems, function will be
-associated with any taxa that are abundant in those ecosystems. 
+associated with any taxa that are abundant in those ecosystems.
 In order to understand the biological basis of ecosystem function, we need to
 separate the close association between environmental variation, community
 composition, and ecosystem function in order to identify what aspects of
 microbial biodiversity determine the rate of ecosystem function.
 
-Successfully connecting microbial community structure to ecosystem function
-depends on being precise about the variation we want to explain. The first and
-often overlooked step is choosing a
-clearly defined function that exhibits considerable variation across ecosystems. 
-Next, be intentional about choosing the
-population to be sampled to maximize the amount of variation. For example, how
-might ecosystems that are otherwise quite similar vary in function?
-Alternatively, how might one ecosystem change in response to a single
-environmental change? This could be achieved by sampling across similar ecosystems 
-or by imposing experimental conditions that minimize environmental variation or
-vary only abiotic factors of interest. 
-It is important to take an agnostic approach towards identifying taxa that are
-indicators of ecosystem function. It is also important to remember that any
-relationships identified in this manner are provisional until further tests are
-performed. The work is not done until the organism has been manipulated through
-addition, knockout, or variation in abundance.
+%Microorganisms exhibit biogeographic patterns due to
+%ecological selection and geographic separation \citep{martiny2006}. 
+%Organisms exhibit population differentiation due to geographic and ecological
+%processes \citep{wright1943}. Neutral processes such as local genetic drift and
+%reduced gene flow due to geographic separation can lead to population
+%differentiation. In addition, environmental distance can lead to selection
+%against migrants \citep{hendry2004} and local selection on endemic populations
+%to generate variation.
+
+The same study design decisions used in GWAS could be applied to microbial
+studies of structure-function connections. First, it is important to choose a 
+subset of ecosystems that are relatively homogeneous in their conditions other
+than that function of interest. This could be achieved by sampling across
+similar types of ecosystems or by imposing conditions that minimize
+environmental varition or vary only abiotic factors of interest. Next, it is important to provide a narrow
+definition of function and a consistant measurement approach across studies.
+Also, some functions are putatively controlled by one or a few taxa
+\citep{mccalley2014}, but most functions are likely controlled by many
+interacting microorganisms. To detect these associations depends on a large
+sample size. After collecting samples, the underlying sample structure should be
+controlled for by including environmental and spatial covariates and by
+accounting for population structure. Finally, statistical approaches to adjust
+for multiple comparisons should be applied. This approach could be applied to 16S amplicons or
+genes in metagenomic (or other -omic) datasets. 
+
+%clearly defined function that exhibits considerable variation across ecosystems. 
+%Next, be intentional about choosing the
+%population to be sampled to maximize the amount of variation. For example, how
+%might ecosystems that are otherwise quite similar vary in function?
+%Alternatively, how might one ecosystem change in response to a single
+%environmental change?
+%It is important to take an agnostic approach towards identifying taxa that are
+%indicators of ecosystem function. It is also important to remember that any
+%relationships identified in this manner are provisional until further tests are
+%performed. The work is not done until the organism has been manipulated through
+%addition, knockout, or variation in abundance.
 
 In this paper we propose integrating microbial biodiversity-ecosystem function
 research with ideas and techniques from population genetics to advance our
-understanding of the role of microbial commuities in the functioning of
+understanding of the role of microbial communities in the functioning of
 ecosystems. Perhaps the most important part of that discussion is to define the
-question carefully. In microbial ecology
-structure-function research is focused on answering the question: what is the
-unique contribution of the microbial community to ecosystem function? This is of
+question carefully. Microbial structure-function research should focus on answering the question: what is the
+unique contribution of the microbial community to ecosystem function independent
+of the environment? This is of
 great interest for two reasons. First, because it addresses what is the singular
 contribution of biodiversity to the functioning of ecosystems. Second, on a
 practical level, because answering that question will be essential to
-incorporate a microbial component into ecosystem models.
-
-Is variation in microbial community
-structure associated with differences in ecosystem function across space,
-time, and environments?
+incorporate a microbial component into ecosystem models. To address that
+question, we demonstrate that one ecosystem function, high-affinity methane
+oxidation, is significantly association with variation in microbial community
+composition. We also show that three components of population stratification
+contribute significantly to variation in ecosystem function. Finally, we
+demonstrate one approach to identifying the component of microbial
+community that contributes to ecosystem function use an association test that
+controls for these three
+covariates and find four microbial taxa that are significantly associated with
+ecosytsem function.
 
 \section{Methods}
 

@@ -856,6 +856,10 @@ all_model_output  %>%
   ungroup()
 
 colnames(sig_taxa_all)
+taxa <- 
+sig_taxa_all %>% 
+  select(comps, Phylum:Genus)
+
 sig_taxa_all %>% 
   filter(comps == 'gce')  %>% 
   select(Phylum:Genus) %>% 
