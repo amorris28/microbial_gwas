@@ -5,7 +5,7 @@
 \usepackage{multirow}
 \usepackage{makecell}
 \usepackage{graphicx}
-\graphicspath{{../Figures/}}
+\graphicspath{{../figures/}}
 
 \bibpunct{(}{)}{,}{a}{}{;}
 
@@ -193,7 +193,7 @@ function due to admixture if that organism tends to reside in ecosystems with
 high rates of ecosystem function.
 
 Microbial admixture could arise through a
-number of ecological mechanisms illustrated in conceptual diagram 1. For
+number of ecological mechanisms illustrated in the conceptual diagram in Figure 1. For
 example, an environmental condition such as pH could contribute to a high rate
 of ecosystem function and select for a taxon even if that taxon is unrelated to
 function. An association could also arise if an organism disperses from a
@@ -259,7 +259,7 @@ oxidation, is significantly association with variation in microbial community
 composition. We also show that three components of population stratification
 contribute significantly to variation in ecosystem function. Finally, we
 demonstrate one approach to identifying the component of microbial
-community that contributes to ecosystem function use an association test that
+community that contributes to ecosystem function using an association test that
 controls for these three
 covariates and find four microbial taxa that are significantly associated with
 ecosytsem function.
@@ -286,7 +286,7 @@ environment.
 We first applied traditional tests of microbial biodiversity-ecosystem function
 relationships. To do this, we fit ordinary least squares regression models with
 the rate of ecosystem function as the response with one predictor for each
-model. These predictors include functional gene and transcript abundance,
+model. These predictors include functional gene abundance,
 diversity measures including richness, Shannon's diversity index, and Simpson's
 diversity index, measures of microbial community composition using the first
 several principal component axes from a principal component
@@ -299,7 +299,7 @@ association studies. We fit variance component mixed models from the
 \texttt{varComp} package to test whether variation in microbial
 community composition expains a significant portion of the variation in
 ecosystem function \citep{qu2013}. First, we fit an intercept-only model with
-each random effect in all combinations. Variance components included deographic location was coded as a factor, environmental
+each random effect in all combinations. Variance components included geographic location was coded as a factor, environmental
 similarity from euclidean distance of four edaphic variables including total
 nitrogen, total carbon, moisture content, and bulk density, and
 community similarity calculated from Bray-Curtis dissimilarity for abundance
@@ -336,28 +336,55 @@ the \texttt{qvalue} package.
 
 \section{Results}
 
+Methane oxidation rate was significantly correlated with the first principal
+component from a PCA of the
+community matrix of ASVs inferred from 16S rRNA genes (Figure
+\ref{fig:corrs}, Table 1). Other typical
+measurements of community structure including functional gene abundance for the
+gene encoding the final step in the methanotrophy pathway, richness, and Shannon
+diversity were not significantly correlated with methane oxidation rate.
 
+\subfile{../tables/trad_cor_table}
+
+\begin{figure}
 \includegraphics[width=0.5\textwidth]{lowk_pmoa}
 \includegraphics[width=0.5\textwidth]{lowk_pc1}
 \includegraphics[width=0.5\textwidth]{lowk_rich}
 \includegraphics[width=0.5\textwidth]{lowk_shan}
+\caption{\label{fig:corrs}
+  \textbf{Methane oxidation rate is correlated with community composition, but not
+functional gene abundance or diversity}.
+  Correlations between community attributes and ecosystem function. A) Abundance
+  of the functional gene \textit{pmoA}, B) community composition based on
+  principal component 1 of a PCA, C) richness, and D) Shannon's diversity index. n = 44 except
+for A where n = 42, because two samples failed to amplify during quantitative
+PCR.}
+\end{figure}
 
-All three variance components are significant individually. Community
-significant in the community + environment model and geography
-significant in the geography + environment model. Table \ref{tab:pvalues}
+Three variance components explained significant portion of the variation in methane
+oxidation when tested individually including community similaity from
+Bray-Curtis distance, environmental similarity, and geographic similarity. When
+combined, most of these terms became not significant with two exceptions. In the
+community + environment model, community was still significant and in the
+geography + environment model, geography was still significant (Table 2). 
 
 \subfile{../tables/var_comp_pvalues}
 
-Including different covariates removes different numbers of
-significant taxa. Some covariates add taxa that were not previously
-identified as significant. Table \ref{tab:n_taxa} 
+There were 460 taxa that were significantly correlated with methane oxidation
+rate. After including each covariate, fewer taxa were significant. All variance
+components removed some significant taxa and several of the models added taxa 
+that were not previously
+identified as significant. Controlling for community similarity removed all
+significant taxa and controlling for geography and community removed all
+significant taxa. After controlling for all three covariates, only four taxa
+remained significant (Table 3). 
 
 \subfile{../tables/all_taxa_n}
 
 After controlling for geographic proximity, environmental similarity, and
 similarity in community composition, four taxa were significantly correlated
 with the rate of methane oxidation. None of these four taxa are known methane
-oxidizers or methane producers. Table  \ref{tab:sig_taxa}
+oxidizers or methane producers (needs citations) (Table 4).
 
 \subfile{../tables/all_taxa_sig}
 
@@ -367,7 +394,8 @@ In this paper, we argue that the traditional approach to microbial BEF research
 ignores important understandings about the nature of ecological processes in
 determining the distribution of microorganisms. The marker gene hypothesis has
 proven unsuccesful in predicting the rates of ecosystem functions from the
-abundance of functional genes and in our example study was not significant.
+abundance of functional genes and in our example study was not a good predictor
+of ecosystem function.
 Similarly, diversity metrics from the entire Prokaryotic community were not
 explanatory. These results agree with recent reviews of this literature and
 demonstrate that these approaches are not a fruitful avenue for elucidating
