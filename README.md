@@ -1,13 +1,11 @@
 # Royal Society Paper
-- Processes data from Gabon and Brazil
+- Imports 
 - Performs variance partitioning
 - Performs GWAS-esque CWAS analysis
 - Compiles the manuscript
 - Also compiles a presentation
 
 ## Terms
-Dim, Dimensions, Brazil - Files associated with the Dimensions project in Brazil
-
 Gab, Gabon, gab - Files associated with the Gabon project
 
 adj, adjusted - Data that has had the PC correction performed
