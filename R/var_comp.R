@@ -12,7 +12,7 @@ library(data.table)
 #registerDoSNOW(cl)
 #import_data
 registerDoParallel(cores = 28)
-
+taxon_table <- fread('../output/taxon_table.csv', data.table = FALSE, na.strings = "")
 all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
 # Variance Component Analysis
 
@@ -22,11 +22,70 @@ calc_sim_matrix <- function(x) {
 1/(1+as.matrix(dist(as.matrix(scale(x)))))
 }
 
-## Remove ASVs only present in 1 sample
 asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+# Total dataset n asvs
+dim(asvs)
 asvs <- asvs[, colSums(asvs) > 0]
+# n asvs present in at least one sample
+dim(asvs)
+vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+
+
+#### Cluster ASVs at the genus level
+## n Unique ASVS
+#length(unique(taxon_table$asv))
+## n ASVs with no Genus assignment
+#sum(is.na(taxon_table$Genus))
+#dim(asvs)
+#asvs <- cbind(Sample = all_data$Sample, all_data[, grepl("^[asv]", colnames(all_data))])
+#asvs <- 
+#  asvs %>% 
+#  gather(asv, abundance, 2:ncol(asvs)) %>% 
+#  left_join(taxon_table) %>% 
+#  select(Sample, Genus, abundance) %>% 
+#  group_by(Sample, Genus) %>% 
+#  summarize(abundance = sum(abundance)) %>% 
+#  spread(Genus, abundance)
+#dim(asvs)
+#asvs[1:5, 1:5]
+#asvs <- as.matrix(asvs[, -1])
+#dim(asvs)
+#asvs <- asvs[, colSums(asvs) > 0]
+#
+###
+
+PA <- asvs
+PA[PA<2] = 0
+PA[PA>1] = 1
+PA[1:10, 1:10]
+sum(colSums(PA) == 44)
+sum(colSums(PA) == 0)
+sum(apply(PA,2,sum) == 44)
+sum(apply(PA,2,sum) == 0)
+PA <- PA[, !colSums(PA) %in% c(0, 44)]
+colnames(PA)
+asvs <- PA
+
+#dim(asvs)
+#sum(asvs > 0)
+#sum(asvs > 3)
+#abund <- asvs
+#abund_ranks <- apply(asvs, 1, rank)
+#t(abund[1:10, 1:10])
+#abund_ranks[1:10, 1:10]
+#abund_ranks <-abund_ranks - 500
+#abund_ranks[1:10, 1:10]
+#abund_ranks[abund_ranks < 1] <- 1
+#abund_ranks[1:5,1:8]
+#summary(abund_ranks)
+#abund_ranks
+#
+#dim(asvs)
+# Recombine
 all_data <- cbind(vars, asvs)
+dim(all_data)
+
+
 
 # Community similarity
 asv <- 3
@@ -78,10 +137,10 @@ func <- all_data[, func]
 #func <- perm_lowk[, y]
 n_perm <- 1
 #n_perm <- colnames(perm_lowk)[y]
-com_sim <- 1 - as.matrix(vegdist(asvs[, -x], method = 'jaccard'))
+com_sim <- 1 - as.matrix(vegdist(asvs[, -x]))
 parts <- NULL
 
-geo <- cholRoot(geo_sim)
+geo <- all_data$geocode
 com <- cholRoot(com_sim)
 env <- cholRoot(env_sim)
 
@@ -129,7 +188,7 @@ system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind',
                                .packages = c('vegan', 'varComp', 'tidyverse')) %dopar% { 
             suppressMessages(suppressWarnings(fit_varComps(x = i, all_data = all_data)))
                  })
-fwrite(results, "../output/var_comp_out_all.csv")
+fwrite(results, "../output/var_comp_genus.csv")
 ##+ fit_var_comp_wet
 #
 #wet_data <- filter(all_data, Wetland == 'Wetland')

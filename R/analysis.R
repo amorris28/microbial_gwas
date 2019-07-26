@@ -40,13 +40,16 @@ options(knitr.kable.NA = '')
 #+ r tree_analysis
 #tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
 #+ r import_data
-
 taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE)
 all_data <- data.table::fread('../output/gab_all_vst_troph.csv', data.table = FALSE)
 gen_data <- data.table::fread('../output/gab_all_vst_gen.csv', data.table = FALSE)
 n_samp <- nrow(all_data)
 n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
 
+asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
+asvs <- asvs[, colSums(asvs) > 0]
+all_data <- cbind(vars, asvs)
 ## Remove ASVs only present in 1 sample
 remove_asvs_in_1_sample <- function(dataset) {
 asvs <- as.matrix(dataset[, grepl("^[asv]", colnames(dataset))])
@@ -238,18 +241,20 @@ taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[
 
 #+ trad_correlations
 
+
 colnames(all_data[, 1:13])
 
 print(ggplot(all_data, aes(x = X, y = Y)) + 
   geom_point(aes(color = all_data$Wetland)) +
   labs(title = "Distribution of sites highlighted by wetland or upland"))
+
 ggplot(all_data, aes(x = pmoa_copy_num, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
-  labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation')) + 
-  ggsave(file = '../Figures/lowk_pmoa.pdf', width = 4, height = 4)
-summary(lm(Low_final_k ~ pmoa_copy_num, data = all_data))
+  labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation (k)')) + 
+  annotate(geom = 'text', x = 0, y = 2.5, label = 'A', size = 6) +
+  ggsave(file = '../figures/lowk_pmoa.pdf', width = 4, height = 4)
 
 ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
   geom_point() +
@@ -266,10 +271,10 @@ ggplot(all_data, aes(x = pc1, y = Low_final_k)) +
        geom_point() +
        geom_smooth(method = 'lm') +
   theme_classic() +
-  labs(x = 'PC1', y = expression('Methane oxidation')) + 
-  ggsave(file = '../Figures/lowk_pc1.pdf', width = 4, height = 4)
+  labs(x = 'PC1', y = expression('Methane oxidation (k)')) + 
+  annotate(geom = 'text', x = min(all_data$pc1), y = 2.5, label = 'B', size = 6) +
+  ggsave(file = '../figures/lowk_pc1.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ pc1, data = all_data))
-
 #my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
 #          score = scores(pca)$species[, 'PC1'])
 #taxon_table  %>% 
@@ -294,18 +299,19 @@ ggplot(data = all_data, aes(x = richness, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
-  labs(x = 'Richness', y = expression('Methane oxidation')) + 
-  ggsave(file = '../Figures/lowk_rich.pdf', width = 4, height = 4)
+  labs(x = 'Richness', y = expression('Methane oxidation (k)')) + 
+  annotate(geom = 'text', x = min(all_data$richness), y = 2.5, label = 'C', size = 6) +
+  ggsave(file = '../figures/lowk_rich.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ richness, data = all_data))
-
 # Low K and Shannon, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
-  labs(x = 'Shannon Diversity', y = expression('Methane oxidation')) + 
-  ggsave(file = '../Figures/lowk_shan.pdf', width = 4, height = 4)
+  labs(x = 'Shannon Diversity', y = expression('Methane oxidation (k)')) + 
+  annotate(geom = 'text', x = min(all_data$shannon), y = 2.5, label = 'D', size = 6) +
+  ggsave(file = '../figures/lowk_shan.pdf', width = 4, height = 4)
 summary(lm(Low_final_k ~ shannon, data = all_data))
 
 ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k)) +
@@ -313,7 +319,6 @@ ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k
   geom_smooth(method = 'lm') + 
   labs(title = "Without sample 26")
 summary(lm(Low_final_k ~ shannon, data = all_data[all_data$shannon > 5, ]))
-
 # Low k and Simpson, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = simpson, y = Low_final_k)) +
@@ -326,6 +331,61 @@ ggplot(data = all_data[all_data$simpson > 0.998, ], aes(x = simpson, y = Low_fin
   geom_smooth(method = 'lm') + 
   labs(title = "Without sample 1 and 26")
 summary(lm(Low_final_k ~ simpson, data = all_data[all_data$simpson > 0.998, ]))
+
+
+trad_cor_table <- data.frame(predictor = c('\\textit{pmoA} abundance',
+                                           'PC1', 'Richness', 'Shannon Diversity'),
+estimate = NA,
+SE = NA,
+t.value = NA,
+p.value = NA,
+r.squared = NA)
+
+fit <- lm(Low_final_k ~ pmoa_copy_num, data = all_data)
+trad_cor_table[1, 2] <- summary(fit)$coefficients[2, 1]
+trad_cor_table[1, 3] <- summary(fit)$coefficients[2, 2]
+trad_cor_table[1, 4] <- summary(fit)$coefficients[2, 3]
+trad_cor_table[1, 5] <- summary(fit)$coefficients[2, 4]
+trad_cor_table[1, 6] <- summary(fit)$r.squared
+
+fit <- lm(Low_final_k ~ pc1, data = all_data)
+trad_cor_table[2, 2] <- summary(fit)$coefficients[2, 1]
+trad_cor_table[2, 3] <- summary(fit)$coefficients[2, 2]
+trad_cor_table[2, 4] <- summary(fit)$coefficients[2, 3]
+trad_cor_table[2, 5] <- summary(fit)$coefficients[2, 4]
+trad_cor_table[2, 6] <- summary(fit)$r.squared
+
+fit <- lm(Low_final_k ~ richness, data = all_data)
+trad_cor_table[3, 2] <- summary(fit)$coefficients[2, 1]
+trad_cor_table[3, 3] <- summary(fit)$coefficients[2, 2]
+trad_cor_table[3, 4] <- summary(fit)$coefficients[2, 3]
+trad_cor_table[3, 5] <- summary(fit)$coefficients[2, 4]
+trad_cor_table[3, 6] <- summary(fit)$r.squared
+
+fit <- lm(Low_final_k ~ shannon, data = all_data)
+trad_cor_table[4, 2] <- summary(fit)$coefficients[2, 1]
+trad_cor_table[4, 3] <- summary(fit)$coefficients[2, 2]
+trad_cor_table[4, 4] <- summary(fit)$coefficients[2, 3]
+trad_cor_table[4, 5] <- summary(fit)$coefficients[2, 4]
+trad_cor_table[4, 6] <- summary(fit)$r.squared
+
+trad_cor_table$p.value <- 
+  c(myround(trad_cor_table$p.value[1], 3),
+    formatC(trad_cor_table$p.value[c(2)], format = "e", digits = 2),
+    myround(trad_cor_table$p.value[3:4], 3))
+trad_cor_table[c(2), 5] <- 
+  cell_spec(trad_cor_table[c(2), 5],  "latex", bold = T)
+
+trad_cor_table %>% 
+  mutate(estimate = paste0(myround(estimate, 3), " (", myround(SE, 3), ")")) %>% 
+  mutate(t.value = myround(t.value, 3)) %>% 
+  select(-SE) %>% 
+  kable('latex', booktabs = TRUE, escape = FALSE, digits = 3,
+        caption = 'Aspects of microbial community structure. Significant p-values
+        are bolded (p \\textless{} 0.05). n = 44 except for \\textit{pmoA} where n = 42',
+        col.names = c('Variable', 'Estimate (SE)', 't.value', 'p.value', '$R^2$')) %>% 
+  writeLines('../tables/trad_cor_table.tex')
+
 
 #'
 #' ## Summary of correlations
@@ -855,6 +915,42 @@ all_model_output  %>%
   arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
   ungroup()
 
+  sig_taxa_gce <- 
+all_data %>% 
+  select(Low_final_k, Land_type, filter(sig_taxa_all, comps == 'gce')$asv)
+
+head(sig_taxa_gce)
+
+
+ggplot(sig_taxa_gce, aes(
+
+
+sig_pca <- 
+  sig_taxa_gce %>% 
+  select(starts_with('asv')) %>% 
+  as.matrix() %>% 
+  rda(scale = TRUE)
+biplot(sig_pca)
+
+sig_taxa_gce$sig_pc1 <- 
+  scores(sig_pca, choices = 1, display = 'sites', scaling = 3)
+sig_taxa_gce$sig_pc2 <- 
+  scores(sig_pca, choices = 2, display = 'sites', scaling = 3)
+
+ggplot(sig_taxa_gce, aes(sig_pc1, Low_final_k)) +
+  geom_point()
+ggplot(sig_taxa_gce, aes(sig_pc2, Low_final_k)) +
+  geom_point()
+
+  scores(sig_pca, choices = 1, display = 'species', scaling = 3)
+  scores(sig_pca, choices = 2, display = 'species', scaling = 3)
+
+summary(lm(Low_final_k ~ sig_pc1, all_data))
+
+fit <- varComp(Low_final_k ~ as.matrix(sig_taxa), data = all_data, varcov = list(com_sim, geo_sim, env_sim))
+summary(fit)
+
+
 colnames(sig_taxa_all)
 taxa <- 
 sig_taxa_all %>% 
@@ -891,13 +987,13 @@ data.frame(
            added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
                        sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
                        sum(!gce_ %in% n_)),
-           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
-                     length(gc_), length(ce_), length(gce_)))
+           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
+                     length(ge_), length(ce_), length(gce_)))
 
 comp_adds_removes %>% 
   kable('latex', booktabs = TRUE, 
         caption = paste0("Number of taxa correlated with high-affinity
-                         methane oxidiation. Tested ", 
+                         methane oxidation. Tested ", 
                          length(unique(all_model_output$asv)), " taxa.
         Significant taxa determined by controlling the false-discovery rate
         (q \\textless{} 0.05). n = ", nrow(all_data)),
