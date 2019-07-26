@@ -1,31 +1,56 @@
 # Royal Society Paper
-- Imports 
-- Performs variance partitioning
-- Performs GWAS-esque CWAS analysis
-- Compiles the manuscript
-- Also compiles a presentation
+This is the project directory for the Royal Society paper. 
 
-## Terms
-Gab, Gabon, gab - Files associated with the Gabon project
 
-adj, adjusted - Data that has had the PC correction performed
+## Data
+
+`data/` contains raw data as received from colleagues. This is never modified,
+but is under version control.
+
+`output/` is where modified data files are saved. These are not version
+controlled and she be recreated from source.
+
+`talapas-output/` is where model output from the talapas HPC cluster.
 
 ## Scripts
-`brazil_cleaning.R` - Process Brazil data and combine into one data file
-including the ASV table, environmental metadata and lat long coordinates
 
-`gabon_cleaning.R` - Process Gabon data and combine into one data file including
-ASV table, environmental metadata, and lat long coordiantes
+### R
+`R/` directory contains `R` scripts that run.
 
-`geodist_processing.R` - Takes Gabon lat long coordinates and converts them to
-meters in UTM
+`clean_asvs.R` takes in the raw ASV table and munges it for analysis including
+performing the `varianceStabilizingTransformation` from `DESeq2`.
 
-`rarefy_asv_table.R` - Rarefies Gabon ASV table
+`clean_metadata.R` takes in the raw sample date file and munges it for analysis.
 
-`lm_model.R` - Takes adjusted function and community data and performs linear
-models for all taxa
+`geodist_processing.R` takes in the raw GPS data and converts it to meters using
+UTM.
 
-`id_taxa.R` - Takes Gabon GWAS model output and returns tables of identified
-taxa
+`combine_data.R` pulls in the asvs, sample data, and GPS data and combines them
+into a single data structure.
 
-`var_comp_brazil.R` - 
+`var_comp.R` is the script that fits variance component models from the raw
+data. This is typically submitted to talapas and the output from talapas is
+`scp`ed into `talapas-output/`.
+
+`analysis.R` is the primary file that presents the results and creates the
+figures and tables. This script can be rendered into `html` using `knitr::render`. 
+
+`functions.R` contains holds the user-made functions specific to this project.
+
+### Manuscript
+`manuscript/` directory contains `.tex` files to compile the manuscript
+
+`ecology.bst` is the Ecology journal bibliography style file.
+
+`latexmkrc` removes margins for easier viewing of the PDF on computers. This can
+be renamed or removed to return to normal `latex` formatting.
+
+`library.bib` is the bibliography file.
+
+`main.tex` contains the manuscript text.
+
+### Tables and Figures
+These directories are not version controlled. They should always we able to be
+recreated from source.
+`tables/` is where tables are saved from `R` and imported to `latex`
+`figures/` is where figures are saved from `R` and imported to `latex`
