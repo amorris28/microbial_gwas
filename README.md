@@ -1,6 +1,20 @@
 # Royal Society Paper
 This is the project directory for the Royal Society paper. 
 
+How to cite this manuscript:
+
+Morris AH, Meyer KM, Bohannan BJM (2019) Linking microbial communities
+to ecosystem functions: what we can learn from genotype-phenotype mapping
+in organisms 
+
+Data are from:
+
+Meyer KM, Hopple AM, Klein A, Morris AH, Bridgham
+SD, Bohannan BJM (2019) Community structure – ecosystem function
+relationships in the Congo Basin methane cycle depend on the physiological
+scale of function. 
+[bioRxiv](https://www.biorxiv.org/) doi:[10.1101/639989](https://doi.org/10.1101/639989)
+
 
 ## Data
 
