@@ -84,6 +84,12 @@ screeplot(geo_pca)
 summary(geo_pca)
 all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
 
+all_data %>% 
+  ggplot(aes(Low_final_k)) +
+  facet_grid(geocode ~ Wetland) +
+  geom_density()
+colnames(all_data[1:20])
+
 #pca <- rda(as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))]))
 #screeplot(pca)
 #head(summary(pca))
@@ -730,6 +736,7 @@ wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_
 dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
 dry_model_output_bin <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_bin.csv'))
 dry_model_output_geo <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_geo.csv'))
+model_output_genus <- as.data.frame(data.table::fread('../talapas-output/var_comp_genus.csv'))
 
 #' ## Variance components
 
@@ -766,6 +773,10 @@ dry_model_output_bin %>%
         col.names = c('Components', 'Geography', 'Community', 'Environment', 'Error'),
         digits = 2, format = 'latex') %>% 
   kable_styling()
+
+model_output_genus %>% 
+  group_by(comps) %>% 
+  summarize_at(vars(geo, com, env, err), mean)
 
 #' ## Number of taxa identified with each covariate
 
@@ -810,6 +821,14 @@ my_qs <- qvalue(dry_model_output_geo$p.value[dry_model_output_geo$comps == i])
 summary(my_qs)
 dry_model_output_geo$qvalues[dry_model_output_geo$comps == i] <- my_qs$qvalues
 }
+
+for (i in unique(model_output_genus$comps)) {
+  print(i)
+my_qs <- qvalue(model_output_genus$p.value[model_output_genus$comps == i])
+summary(my_qs)
+model_output_genus$qvalues[model_output_genus$comps == i] <- my_qs$qvalues
+}
+
 #+ r n_taxa_ided
 
 n_taxa <- 
@@ -867,6 +886,12 @@ dry_model_output_geo %>%
   filter(qvalues < 0.05)  %>% 
   summarize(count = length(unique(asv)))
 
+model_output_genus %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05)  %>% 
+  summarize(count = length(unique(asv)))
+
 #' ## Taxa identified with each covariate
 
 
@@ -895,6 +920,14 @@ plot(euler(asvs))
 #' ### All Data Model
 
 #+ r all_taxa
+
+model_output_genus %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(qvalues < 0.05 ) %>% 
+  select(comps, asv, Phylum:Genus) %>% 
+  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
+  ungroup()
 
 my_model_output  %>% 
   left_join(taxon_table) %>% 
