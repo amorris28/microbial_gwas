@@ -1,4 +1,33 @@
 
+varCompGE <- function(model, drop = FALSE) {
+  if (length(model$varComps) <= 1) {
+h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
+  } else {
+h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
+  }
+}
+
+permute_no_replace_for <- function(perm_vec, nperm = 999) {
+samples <- matrix(ncol = nperm, nrow = length(perm_vec))
+samples <- cbind(samples, truth = perm_vec)
+for (i in seq_len(nperm)) {
+  sample_i <- sample(perm_vec)
+  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
+    sample_i <- sample(perm_vec)
+  }
+  samples[, i] <- sample_i
+  colnames(samples)[i] <- paste0('perm.', i)
+}
+return(samples)
+}
+
+#taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[ 
+#                      if( any(is.na(r))){ 
+#                          (which(is.na(r))[1]-1) 
+#                       }else{
+#                          (length(r)-0)}
+#                                      ] }
+#       )
 ##### Functions
 
 lowk_model <- function(df) {

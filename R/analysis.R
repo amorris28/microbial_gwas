@@ -16,147 +16,30 @@ knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
 #+ r load_packages, include=FALSE
 
 library(tidyverse)
-#library(lubridate)
 library(broom)
 library(broman)
-#library(morris)
 library(varComp)
 library(vegan)
-library(parallel)
 library(qvalue)
 library(knitr)
 library(kableExtra)
-#library(eulerr)
-#library(GGally)
 library(phyloseq)
-library(doParallel)
 library(gap)
 library(lmtest)
-
-num.cores <- detectCores()
-registerDoParallel(cores = 3)
+source('functions.R')
 options(knitr.kable.NA = '')
 
-#+ r tree_analysis
-#tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
 #+ r import_data
-taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE)
-all_data <- data.table::fread('../output/gab_all_vst_troph.csv', data.table = FALSE)
-gen_data <- data.table::fread('../output/gab_all_vst_gen.csv', data.table = FALSE)
-n_samp <- nrow(all_data)
-n_asvs <- ncol(all_data[, grepl("^[asv]", colnames(all_data))])
+physeq <- readRDS('../output/physeq.rds')
 
-asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
-asvs <- asvs[, colSums(asvs) > 0]
-all_data <- cbind(vars, asvs)
-## Remove ASVs only present in 1 sample
-remove_asvs_in_1_sample <- function(dataset) {
-asvs <- as.matrix(dataset[, grepl("^[asv]", colnames(dataset))])
-vars <- dataset[, !grepl("^[asv]", colnames(dataset))]
-asvs <- asvs[, colSums(asvs) > 0]
-cbind(vars, asvs)
-}
-all_data <- remove_asvs_in_1_sample(all_data)
-gen_data <- remove_asvs_in_1_sample(gen_data)
+# Remove 0 abundance taxa
+otu_table(physeq) <- otu_table(physeq)[, colSums(otu_table(physeq)) > 0]
 
-# Add location factor
-all_data[all_data$Y > 30000, 'geocode'] <- 'A'
-all_data[all_data$Y < 30000 & all_data$Y > 10000, 'geocode'] <- 'B'
-all_data[all_data$Y < 10000, 'geocode'] <- 'C'
-all_data$geocode <- factor(all_data$geocode)
-
-pca <- rda(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]))
-screeplot(pca)
-head(summary(pca))
-all_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
-all_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
-all_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
-
-env_pca <- rda(as.matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))
-screeplot(env_pca)
-head(summary(env_pca))
-all_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
-all_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
-
-geo_pca <- rda(as.matrix(all_data[, c('X', 'Y')]))
-screeplot(geo_pca)
-summary(geo_pca)
-all_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
-
-all_data %>% 
+sample_data(physeq) %>% 
+  filter(Experiment == 'MO') %>% 
   ggplot(aes(Low_final_k)) +
   facet_grid(geocode ~ Wetland) +
   geom_density()
-colnames(all_data[1:20])
-
-#pca <- rda(as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))]))
-#screeplot(pca)
-#head(summary(pca))
-#gen_data$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
-#gen_data$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
-#gen_data$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
-#
-#env_pca <- rda(as.matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')]))
-#screeplot(env_pca)
-#head(summary(env_pca))
-#gen_data$env_pc1 <- scores(env_pca, choices = 1, display = 'sites', scaling = 3)
-#gen_data$env_pc2 <- scores(env_pca, choices = 2, display = 'sites', scaling = 3)
-#
-#geo_pca <- rda(as.matrix(gen_data[, c('X', 'Y')]))
-#screeplot(geo_pca)
-#summary(geo_pca)
-#gen_data$geo_pc1 <- scores(geo_pca, choices = 1, display = 'sites', scaling = 3)
-
-#+ r sim_mat
-
-calc_sim_matrix <- function(x) {
-1/(1+as.matrix(dist(as.matrix(scale(x)))))
-}
-
-
-## Community similarity
-#asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-#x <- 3
-#asv <- asvs[, x]
-#asv_tax <- colnames(asvs)[x]
-com_sim <- 1 - as.matrix(vegdist(asvs, method = "bray"))
-com_sim_bin <- 1 - as.matrix(vegdist(asvs, method = "jaccard", binary = TRUE))
-
-# Geographic similarity
-geo_sim <- calc_sim_matrix(all_data[, c('X', 'Y')])
-
-# environmental similarity'
-env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
-
-## com similarity gen
-#asvs_gen <- as.matrix(gen_data[, grepl("^[asv]", colnames(gen_data))])
-#
-#x <- 3
-#asv <- asvs_gen[, x]
-#asv_tax <- colnames(asvs_gen)[x]
-#com_sim_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "bray"))
-#com_sim_bin_gen <- 1 - as.matrix(vegdist(asvs_gen[, -c(x)], method = "jaccard", binary = TRUE))
-#
-## Geographic similarity
-#geo_sim_gen <- calc_sim_matrix(gen_data[, c('X', 'Y')])
-#with(gen_data, qplot(X, Y))
-#qplot(c(geo_sim_gen))
-
-## spatial smoothing function boondoggle
-#qplot(x = X, y = Y, data = all_data) + 
-#  stat_smooth() + 
-#  coord_fixed()
-#fit <- loess(scale(Y) ~ scale(X), data = all_data, span = 0.2)
-#summary(fit)
-#fitted <- predict(fit)
-#ggplot(all_data, aes(scale(X), scale(Y))) +
-#  geom_point() +
-#  coord_fixed() + 
-#  geom_line(aes(y = fitted), color = 'red')
-#plot(fitted)
-# environmental similarity'
-#env_sim_gen <- calc_sim_matrix(gen_data[, c('Bulk_dens', 'Mois_cont', 'pH', 'N_percent', 'C_percent')])
 
 #' # Overview
 #' 
@@ -214,101 +97,54 @@ env_sim <- calc_sim_matrix(all_data[, c('Bulk_dens', 'Mois_cont', 'N_percent', '
 #'
 #' # Traditional correlations
 
-
-varCompGE <- function(model, drop = FALSE) {
-  if (length(model$varComps) <= 1) {
-h2G(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
-  } else {
-h2GE(c(model$varComps, err = model$sigma2), vcov(model, what = 'varComp', drop = drop))
-  }
-}
-
-permute_no_replace_for <- function(perm_vec, nperm = 999) {
-samples <- matrix(ncol = nperm, nrow = length(perm_vec))
-samples <- cbind(samples, truth = perm_vec)
-for (i in seq_len(nperm)) {
-  sample_i <- sample(perm_vec)
-  while (any(apply(samples, 2, function(x) {all(sample_i == x)}), na.rm = T)) {
-    sample_i <- sample(perm_vec)
-  }
-  samples[, i] <- sample_i
-  colnames(samples)[i] <- paste0('perm.', i)
-}
-return(samples)
-}
-
-taxon_table$taxon <- apply(taxon_table, 1, function(r) { r[ 
-                      if( any(is.na(r))){ 
-                          (which(is.na(r))[1]-1) 
-                       }else{
-                          (length(r)-0)}
-                                      ] }
-       )
-
 #+ trad_correlations
+sample_data <- as(sample_data(physeq), 'data.frame')
 
-
-colnames(all_data[, 1:13])
-
-print(ggplot(all_data, aes(x = X, y = Y)) + 
-  geom_point(aes(color = all_data$Wetland)) +
-  labs(title = "Distribution of sites highlighted by wetland or upland"))
-
-ggplot(all_data, aes(x = pmoa_copy_num, y = Low_final_k)) +
+sample_data(physeq) %>% 
+  ggplot(mapping = aes(x = pmoa_copy_num, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = 0, y = 2.5, label = 'A', size = 6) +
-  ggsave(file = '../figures/lowk_pmoa.pdf', width = 4, height = 4)
+  annotate(geom = 'text', x = 0, y = 2.5, label = 'A', size = 6)
 
-ggplot(all_data, aes(x = pmoa_copy_num, y = Vmax)) +
+ggsave(file = '../figures/lowk_pmoa.pdf', width = 4, height = 4)
+
+
+pca <- rda(otu_table(physeq))
+screeplot(pca)
+head(summary(pca))
+pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+
+
+sample_data(physeq) %>% 
+  ggplot(mapping = aes(x = pc1, y = Low_final_k)) +
   geom_point() +
-  geom_smooth(method = 'lm')
-summary(lm(Vmax ~ pmoa_copy_num, data = all_data))
-
-ggplot(all_data, aes(color = Wetland)) +
-  geom_point(aes(x = pc1, y = pc2))
-
-ggplot(all_data, aes(color = geocode)) +
-  geom_point(aes(x = pc1, y = pc2))
-
-ggplot(all_data, aes(x = pc1, y = Low_final_k)) +
-       geom_point() +
-       geom_smooth(method = 'lm') +
+  geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = 'PC1', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(all_data$pc1), y = 2.5, label = 'B', size = 6) +
-  ggsave(file = '../figures/lowk_pc1.pdf', width = 4, height = 4)
-summary(lm(Low_final_k ~ pc1, data = all_data))
-#my_asvs <- tibble(asv = names(scores(pca)$species[, 'PC1']),
-#          score = scores(pca)$species[, 'PC1'])
-#taxon_table  %>% 
-#  left_join(my_asvs) %>% 
-#  filter(abs(score) > 0.5) %>% 
-#  kable(digits = 2) %>% 
-#  kable_styling()
+  annotate(geom = 'text', x = min(pc1), y = 2.5, label = 'B', size = 6)
 
-## Spatial PCA
+ggsave(file = '../figures/lowk_pc1.pdf', width = 4, height = 4)
 
-ggplot(all_data, aes(x = Wetland, y = Low_final_k)) +
-       geom_boxplot() +
-       geom_jitter()
-summary(lm(Low_final_k ~ Wetland, data = all_data))
+summary(lm(Low_final_k ~ pc1, data = sample_data))
 
-com_matrix <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
-all_data$richness <- rowSums(com_matrix > 0)
-all_data$shannon <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "shannon")
-all_data$simpson <- diversity(as.matrix(all_data[, grepl("^[asv]", colnames(all_data))]), "simpson")
+com_mat <- otu_table(physeq)
+richness <- rowSums(com_mat > 0)
+shannon <- diversity(com_mat, "shannon")
+simpson <- diversity(com_mat, "simpson")
 
-ggplot(data = all_data, aes(x = richness, y = Low_final_k)) +
+ggplot(mapping = aes(x = richness, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = 'Richness', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(all_data$richness), y = 2.5, label = 'C', size = 6) +
-  ggsave(file = '../figures/lowk_rich.pdf', width = 4, height = 4)
-summary(lm(Low_final_k ~ richness, data = all_data))
+  annotate(geom = 'text', x = min(richness), y = 2.5, label = 'C', size = 6)
+
+ggsave(file = '../figures/lowk_rich.pdf', width = 4, height = 4)
+
+summary(lm(Low_final_k ~ richness, data = sample_data))
+
 # Low K and Shannon, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
@@ -586,10 +422,37 @@ varcomp_diag(dry_data)
 
 #' # Variance Components
 
+
+#+ r sim_mat
+
+calc_sim_matrix <- function(x) {
+1/(1+as.matrix(dist(as.matrix(scale(x)))))
+}
+
+
+## Community similarity
+#asvs <- as.matrix(all_data[, grepl("^[asv]", colnames(all_data))])
+#x <- 3
+#asv <- asvs[, x]
+#asv_tax <- colnames(asvs)[x]
+#asv <- otu_table(physeq)[, 1]
+com_sim <- 1 - as.matrix(vegdist(otu_table(physeq), method = "bray"))
+com_sim_bin <- 1 - as.matrix(vegdist(otu_table(physeq), method = "jaccard", binary = TRUE))
+
+# Geographic similarity
+geo_sim <- calc_sim_matrix(sample_data(physeq)[, c('X', 'Y')])
+
+# environmental similarity'
+env_sim <- calc_sim_matrix(sample_data(physeq)[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
+
+Low_final_k <- sample_data(physeq)$Low_final_k
+geocode <- sample_data(physeq)$geocode
+fit <- varComp(Low_final_k ~ asv, random = ~ geocode + cholRoot(env_sim) + cholRoot(com_sim))
+summary(fit)
 #+ r variance components
 model_data <- all_data
 com <- cholRoot(com_sim)
-geo <- model_data$geocode
+geo <- geocode
 geo <- cholRoot(geo_sim)
 env <- cholRoot(env_sim)
 
@@ -613,8 +476,8 @@ var_comp_pvalues <- data.frame(model =
 
 # Single
 # Com
-fit0 <- varComp(Low_final_k ~ 1, data = model_data)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
+fit0 <- varComp(Low_final_k ~ 1)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[1] <- comps$h2G
 var_comp_pvalues$se[1] <- sqrt(comps$Varh2G)
@@ -622,81 +485,81 @@ var_comp_pvalues$se[1] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[1] = p.value(varComp.test(fit, fit0))
 
 # Geo
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
+fit <- varComp(Low_final_k ~ 1, random =  ~ geo)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[2] <- comps$h2G
 var_comp_pvalues$se[2] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[2] = p.value(varComp.test(fit, fit0))
 
 # Env
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
+fit <- varComp(Low_final_k ~ 1, random =  ~ env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[3] <- comps$h2G
 var_comp_pvalues$se[3] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[3] = p.value(varComp.test(fit, fit0))
 
 # Geo Com
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[4] <- comps$h2GE
 var_comp_pvalues$se[4] <- sqrt(comps$Varh2GE)
 var_comp_pvalues$p.value[4] = p.value(varComp.test(fit, fit0))
 
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[5] <- comps$h2G
 var_comp_pvalues$se[5] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[5] = p.value(varComp.test(fit, fit0))
 
 # Geo Env
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
+fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[6] <- comps$h2GE
 var_comp_pvalues$se[6] <- sqrt(comps$Varh2GE)
 var_comp_pvalues$p.value[6] = p.value(varComp.test(fit, fit0))
 
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
+fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[7] <- comps$h2G
 var_comp_pvalues$se[7] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[7] = p.value(varComp.test(fit, fit0))
 
 # Com Env
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ env)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[8] <- comps$h2G
 var_comp_pvalues$se[8] <- sqrt(comps$Varh2G)
 var_comp_pvalues$p.value[8] = p.value(varComp.test(fit, fit0))
 
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[9] <- comps$h2GE
 var_comp_pvalues$se[9] <- sqrt(comps$Varh2GE)
 var_comp_pvalues$p.value[9] = p.value(varComp.test(fit, fit0))
 
 # Geo Com Env
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[10] <- comps$h2GE[2]
 var_comp_pvalues$se[10] <- sqrt(comps$Varh2GE[2])
 var_comp_pvalues$p.value[10] = p.value(varComp.test(fit, fit0))
 
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ com + env)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + env)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[11] <- comps$h2GE[1]
 var_comp_pvalues$se[11] <- sqrt(comps$Varh2GE[1])
 var_comp_pvalues$p.value[11] = p.value(varComp.test(fit, fit0))
 
-fit0 <- varComp(Low_final_k ~ 1, data = model_data, ~ geo + env)
-fit <- varComp(Low_final_k ~ 1, data = model_data, ~ com + geo + env)
+fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
+fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
 comps <- varCompGE(fit)
 var_comp_pvalues$varcomp[12] <- comps$h2G
 var_comp_pvalues$se[12] <- sqrt(comps$Varh2G)
@@ -724,19 +587,17 @@ var_comp_pvalues %>%
         n = ', nrow(model_data), '.'), 
         col.names = c('Model', 'Component', 'Estimate (SE)', 'p-value')) %>% 
   collapse_rows(columns = 1) %>% 
-#  save_kable(file = '../tables/dry_var_comp_pvalues.pdf', keep_tex = TRUE)
   writeLines('../tables/var_comp_pvalues.tex')
 
 #' # Analyze model output
 
 #+ r analyze_model_output
-cell_spec
 all_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out.csv'))
 wet_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_wet.csv'))
 dry_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry.csv'))
 dry_model_output_bin <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_bin.csv'))
 dry_model_output_geo <- as.data.frame(data.table::fread('../talapas-output/var_comp_out_dry_geo.csv'))
-model_output_genus <- as.data.frame(data.table::fread('../talapas-output/var_comp_genus.csv'))
+model_output_abund <- as.data.frame(data.table::fread('../talapas-output/var_comp_abund.csv'))
 
 #' ## Variance components
 
@@ -774,7 +635,7 @@ dry_model_output_bin %>%
         digits = 2, format = 'latex') %>% 
   kable_styling()
 
-model_output_genus %>% 
+model_output_abund %>% 
   group_by(comps) %>% 
   summarize_at(vars(geo, com, env, err), mean)
 
@@ -822,11 +683,11 @@ summary(my_qs)
 dry_model_output_geo$qvalues[dry_model_output_geo$comps == i] <- my_qs$qvalues
 }
 
-for (i in unique(model_output_genus$comps)) {
+for (i in unique(model_output_abund$comps)) {
   print(i)
-my_qs <- qvalue(model_output_genus$p.value[model_output_genus$comps == i])
+my_qs <- qvalue(model_output_abund$p.value[model_output_abund$comps == i])
 summary(my_qs)
-model_output_genus$qvalues[model_output_genus$comps == i] <- my_qs$qvalues
+model_output_abund$qvalues[model_output_abund$comps == i] <- my_qs$qvalues
 }
 
 #+ r n_taxa_ided
@@ -886,7 +747,8 @@ dry_model_output_geo %>%
   filter(qvalues < 0.05)  %>% 
   summarize(count = length(unique(asv)))
 
-model_output_genus %>% 
+taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE, na.strings = "")
+model_output_abund %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(qvalues < 0.05)  %>% 
@@ -921,7 +783,7 @@ plot(euler(asvs))
 
 #+ r all_taxa
 
-model_output_genus %>% 
+model_output_abund %>% 
   left_join(taxon_table) %>% 
   group_by(comps) %>% 
   filter(qvalues < 0.05 ) %>% 

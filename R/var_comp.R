@@ -12,7 +12,7 @@ library(data.table)
 #registerDoSNOW(cl)
 #import_data
 registerDoParallel(cores = 28)
-taxon_table <- fread('../output/taxon_table.csv', data.table = FALSE, na.strings = "")
+#taxon_table <- fread('../output/taxon_table.csv', data.table = FALSE, na.strings = "")
 all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
 # Variance Component Analysis
 
@@ -54,17 +54,17 @@ vars <- all_data[, !grepl("^[asv]", colnames(all_data))]
 #
 ###
 
-PA <- asvs
-PA[PA<2] = 0
-PA[PA>1] = 1
-PA[1:10, 1:10]
-sum(colSums(PA) == 44)
-sum(colSums(PA) == 0)
-sum(apply(PA,2,sum) == 44)
-sum(apply(PA,2,sum) == 0)
-PA <- PA[, !colSums(PA) %in% c(0, 44)]
-colnames(PA)
-asvs <- PA
+#PA <- asvs
+#PA[PA<2] = 0
+#PA[PA>1] = 1
+#PA[1:10, 1:10]
+#sum(colSums(PA) == 44)
+#sum(colSums(PA) == 0)
+#sum(apply(PA,2,sum) == 44)
+#sum(apply(PA,2,sum) == 0)
+#PA <- PA[, !colSums(PA) %in% c(0, 44)]
+#colnames(PA)
+#asvs <- PA
 
 #dim(asvs)
 #sum(asvs > 0)
@@ -188,7 +188,7 @@ system.time(results <- foreach(i = seq_len(ncol(asvs)), .combine = 'rbind',
                                .packages = c('vegan', 'varComp', 'tidyverse')) %dopar% { 
             suppressMessages(suppressWarnings(fit_varComps(x = i, all_data = all_data)))
                  })
-fwrite(results, "../output/var_comp_genus.csv")
+fwrite(results, "../output/var_comp_abund.csv")
 ##+ fit_var_comp_wet
 #
 #wet_data <- filter(all_data, Wetland == 'Wetland')
