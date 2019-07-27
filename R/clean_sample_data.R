@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(morris)
 
@@ -130,6 +129,10 @@ gen_attr_table <- gen_attr_table %>%
 colnames(troph_attr_table)
 troph_attr_table <- troph_attr_table %>% 
   select(Sample:pmoa_transcript_num)
+
+# Rename Copies
+gen_attr_table$mcra_copy_num <- gen_attr_table$Copies
+gen_attr_table <- subset(gen_attr_table, select = -c(Copies))
 
 write_csv(gen_attr_table, '../output/gab_gen_attr_table.csv')
 

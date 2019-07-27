@@ -35,10 +35,31 @@ physeq <- readRDS('../output/physeq.rds')
 # Remove 0 abundance taxa
 otu_table(physeq) <- otu_table(physeq)[, colSums(otu_table(physeq)) > 0]
 
+# Add variables
+sample_data(physeq)$richness <- rowSums(com_mat > 0)
+sample_data(physeq)$shannon <- diversity(com_mat, "shannon")
+sample_data(physeq)$simpson <- diversity(com_mat, "simpson")
+
+pca <- rda(otu_table(physeq))
+screeplot(pca)
+head(summary(pca))
+sample_data(physeq)$pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+sample_data(physeq)$pc2 <- scores(pca, choices = 2, display = 'sites', scaling = 3)
+sample_data(physeq)$pc3 <- scores(pca, choices = 3, display = 'sites', scaling = 3)
+sample_data(physeq)$pc4 <- scores(pca, choices = 4, display = 'sites', scaling = 3)
+sample_data(physeq)$pc5 <- scores(pca, choices = 5, display = 'sites', scaling = 3)
+sample_data(physeq)$pc6 <- scores(pca, choices = 6, display = 'sites', scaling = 3)
+sample_data(physeq)$pc7 <- scores(pca, choices = 7, display = 'sites', scaling = 3)
+
 sample_data(physeq) %>% 
   filter(Experiment == 'MO') %>% 
   ggplot(aes(Low_final_k)) +
-  facet_grid(geocode ~ Wetland) +
+  geom_density()
+
+sample_data(physeq) %>% 
+  filter(Experiment == 'MO') %>% 
+  ggplot(aes(Low_final_k)) +
+  facet_grid(Wetland ~ geocode) +
   geom_density()
 
 #' # Overview
@@ -99,7 +120,6 @@ sample_data(physeq) %>%
 
 #+ trad_correlations
 sample_data <- as(sample_data(physeq), 'data.frame')
-
 sample_data(physeq) %>% 
   ggplot(mapping = aes(x = pmoa_copy_num, y = Low_final_k)) +
   geom_point() +
@@ -111,10 +131,7 @@ sample_data(physeq) %>%
 ggsave(file = '../figures/lowk_pmoa.pdf', width = 4, height = 4)
 
 
-pca <- rda(otu_table(physeq))
-screeplot(pca)
-head(summary(pca))
-pc1 <- scores(pca, choices = 1, display = 'sites', scaling = 3)
+summary(lm(Low_final_k ~ pmoa_copy_num, data = as(sample_data(physeq), 'data.frame')))
 
 
 sample_data(physeq) %>% 
@@ -123,23 +140,21 @@ sample_data(physeq) %>%
   geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = 'PC1', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(pc1), y = 2.5, label = 'B', size = 6)
+  annotate(geom = 'text', x = min(sample_data(physeq)$pc1),
+           y = 2.5, label = 'B', size = 6)
 
 ggsave(file = '../figures/lowk_pc1.pdf', width = 4, height = 4)
 
-summary(lm(Low_final_k ~ pc1, data = sample_data))
+summary(lm(Low_final_k ~ pc1 + pc5 + pc6, data = as(sample_data(physeq), 'data.frame')))
 
 com_mat <- otu_table(physeq)
-richness <- rowSums(com_mat > 0)
-shannon <- diversity(com_mat, "shannon")
-simpson <- diversity(com_mat, "simpson")
 
-ggplot(mapping = aes(x = richness, y = Low_final_k)) +
+ggplot(sample_data(physeq), aes(x = richness, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = 'Richness', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(richness), y = 2.5, label = 'C', size = 6)
+  annotate(geom = 'text', x = min(sample_data(physeq)$richness), y = 2.5, label = 'C', size = 6)
 
 ggsave(file = '../figures/lowk_rich.pdf', width = 4, height = 4)
 
@@ -147,20 +162,21 @@ summary(lm(Low_final_k ~ richness, data = sample_data))
 
 # Low K and Shannon, w/ and w/o outlier
 
-ggplot(data = all_data, aes(x = shannon, y = Low_final_k)) +
+ggplot(sample_data(physeq), aes(x = shannon, y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   theme_classic() +
   labs(x = 'Shannon Diversity', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(all_data$shannon), y = 2.5, label = 'D', size = 6) +
-  ggsave(file = '../figures/lowk_shan.pdf', width = 4, height = 4)
-summary(lm(Low_final_k ~ shannon, data = all_data))
+  annotate(geom = 'text', x = min(sample_data(physeq)$shannon), y = 2.5, label = 'D', size = 6)
 
-ggplot(data = all_data[all_data$shannon > 5, ], aes(x = shannon, y = Low_final_k)) +
+ggsave(file = '../figures/lowk_shan.pdf', width = 4, height = 4)
+summary(lm(Low_final_k ~ shannon, data = sample_data))
+
+ggplot(sample_data[shannon > 5, ], aes(x = shannon[shannon > 5], y = Low_final_k)) +
   geom_point() +
   geom_smooth(method = 'lm') + 
   labs(title = "Without sample 26")
-summary(lm(Low_final_k ~ shannon, data = all_data[all_data$shannon > 5, ]))
+summary(lm(Low_final_k ~ shannon, data = as(sample_data(physeq)[shannon > 5, ], 'data.frame')))
 # Low k and Simpson, w/ and w/o outlier
 
 ggplot(data = all_data, aes(x = simpson, y = Low_final_k)) +
