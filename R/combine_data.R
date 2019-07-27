@@ -1,41 +1,56 @@
 library(tidyverse)
 library(morris)
-library(data.table)
-
-# Methanogen metadata
-gen_attr_table <- fread('../output/gab_gen_attr_table.csv', data.table = FALSE)
-gen_attr_table$Site <- paste0(gen_attr_table$Site, 
-				reverse_substr(gen_attr_table$Sample, 3, 3))
+library(phyloseq)
 
 # Methanotrophy metadata
-troph_attr_table <- fread('../output/gab_troph_attr_table.csv', data.table = FALSE)
+troph_attr_table <- data.table::fread('../output/gab_troph_attr_table.csv', data.table = FALSE)
 troph_attr_table$Site <- paste0(troph_attr_table$Site, 
 				reverse_substr(troph_attr_table$Sample, 3, 3))
-## Rarefied ASV Table
-#rare_asv_table <- read.csv('../output/gab_rare_asv_table.csv')
+# Methanogenesis metadata
+gen_attr_table <- data.table::fread('../output/gab_gen_attr_table.csv', data.table = FALSE)
+gen_attr_table$Site <- paste0(gen_attr_table$Site, 
+				reverse_substr(gen_attr_table$Sample, 3, 3))
+geodist <- read.table('../output/geodist.tsv', stringsAsFactors = FALSE)
+
+sample_data <- full_join(troph_attr_table, gen_attr_table)
+sample_data <- left_join(sample_data, geodist, by = "Site")
+rownames(sample_data) <- sample_data$Sample
+sample_data <- sample_data[, -1]
+
+sample_data[sample_data$Y > 30000, 'geocode'] <- 'A'
+sample_data[sample_data$Y < 30000 & sample_data$Y > 10000, 'geocode'] <- 'B'
+sample_data[sample_data$Y < 10000, 'geocode'] <- 'C'
+sample_data$geocode <- factor(sample_data$geocode)
 
 ## DESeq2 variance stabilized asv table
-vst_asv_table <- fread('../output/vst_asv_table.csv', data.table = FALSE)
+otu_table <- data.table::fread('../output/vst_asv_table.csv', data.table = FALSE)
+rownames(otu_table) <- otu_table[, 1]
+otu_table <- otu_table[, -1]
+colnames(otu_table) <- substr(colnames(otu_table), 5, nchar(colnames(otu_table)[1]))
+otu_table <- as.matrix(otu_table)
+class(otu_table)
+colnames(otu_table)
 
-### Raw sequence counts
-#pa_asv_table <- vst_asv_table #read_csv('../output/gab_asv_table.csv')
-#asvs <- pa_asv_table[, -1] 
-### Presence Absence
-#asvs[asvs>0] <- 1
-#pa_asv_table[, -1] <- asvs
+## Taxonomy
+taxon_table <- data.table::fread('../output/taxon_table.csv', data.table = FALSE)
+taxon_table$Species <- ""
+rownames(taxon_table) <- substr(taxon_table$asv, 5, nchar(taxon_table$asv[1]))
+taxon_table[1:10, ]
+taxon_table <- taxon_table[, -1]
+taxon_table <- as.matrix(taxon_table)
 
-#left_join(troph_attr_table, troph_asv_table, by = "Sample") %>%
-#  write_csv('output/troph_total.csv')
-geodist <- read.table('../output/geodist.tsv', stringsAsFactors = FALSE)
-#geodist <- read.table('../data/gabon/Geodist_gabon_methane_samples_lat_long.txt', stringsAsFactors = FALSE)
-#colnames(geodist) <- c('Site', 'X', 'Y')
+## Read tree
+tree <- read_tree('../data/gabon/16S_rep_seqs_tree_Gabon.nwk')
+class(tree)
 
-# Export
-troph_total_vst <- left_join(troph_attr_table, geodist, by = "Site")
-troph_total_vst <- inner_join(troph_total_vst, vst_asv_table, by = "Sample")
-#troph_total_rare <- troph_total_rare[troph_total_rare$Wetland == 'Upland', ]
-fwrite(troph_total_vst, '../output/gab_all_vst_troph.csv')
+## Make phyloseq object
+ASV <- otu_table(otu_table, taxa_are_rows = FALSE)
+sample_names(ASV)
+TAX <- tax_table(taxon_table)
+sample_names(TAX)
+sample_data <- sample_data(sample_data)
+sample_names(sample_data)
 
-gen_total_vst <- left_join(gen_attr_table, geodist, by = "Site")
-gen_total_vst <- inner_join(gen_total_vst, vst_asv_table, by = "Sample")
-fwrite(gen_total_vst, '../output/gab_all_vst_gen.csv')
+physeq <- phyloseq(ASV, TAX, sample_data, tree)
+saveRDS(physeq, '../output/physeq.rds')
+
