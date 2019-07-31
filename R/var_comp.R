@@ -6,14 +6,20 @@ library(parallel)
 library(foreach)
 library(doParallel)
 library(data.table)
+library(phyloseq)
 #library(doSNOW)
 #cl <- makeCluster(28, outfile = "")
 #registerDoParallel(cl)
 #registerDoSNOW(cl)
 #import_data
-registerDoParallel(cores = 28)
+registerDoParallel(cores = 4)
 #taxon_table <- fread('../output/taxon_table.csv', data.table = FALSE, na.strings = "")
 all_data <- as.data.frame(fread('../output/gab_all_vst_troph.csv'))
+physeq <- readRDS('../output/physeq.rds')
+
+physeq <- physeq %>% 
+            subset_samples(Experiment == 'MO') %>% 
+            tax_glom("Family")
 # Variance Component Analysis
 
 # sim_mat

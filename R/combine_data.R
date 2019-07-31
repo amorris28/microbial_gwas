@@ -25,7 +25,9 @@ sample_data[sample_data$Y < 10000, 'geocode'] <- 'C'
 sample_data$geocode <- factor(sample_data$geocode)
 
 ## DESeq2 variance stabilized asv table
-otu_table <- data.table::fread('../output/vst_asv_table.csv', data.table = FALSE)
+otu_table <- data.table::fread('../output/gab_asv_table.csv', data.table = FALSE)
+#otu_table <- otu_table[, -ncol(otu_table)]
+#otu_table <- data.table::fread('../output/vst_asv_table.csv', data.table = FALSE)
 rownames(otu_table) <- otu_table[, 1]
 otu_table <- otu_table[, -1]
 colnames(otu_table) <- substr(colnames(otu_table), 5, nchar(colnames(otu_table)[1]))
@@ -47,4 +49,5 @@ TAX <- tax_table(taxon_table)
 sample_data <- sample_data(sample_data)
 
 physeq <- phyloseq(ASV, TAX, sample_data, tree)
+physeq <- clean_taxa_names(physeq)
 saveRDS(physeq, '../output/physeq.rds')
