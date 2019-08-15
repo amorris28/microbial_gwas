@@ -1,13 +1,17 @@
-# Royal Society Paper
-This is the project directory for the Royal Society paper. 
+# Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms
+This is the project directory for the Royal Society paper. All intermediate
+data files (in `output/`) and all figures (in `figures\`) have been
+created so the final script `7_analysis.R` can be run immediately to recreate
+figures and results. Otherwise, run scripts in order of numberingt to recreate
+the output.
 
-How to cite this manuscript:
+## How to cite this manuscript:
 
 Morris AH, Meyer KM, Bohannan BJM (2019) Linking microbial communities
 to ecosystem functions: what we can learn from genotype-phenotype mapping
 in organisms 
 
-Data are from:
+## Data are from:
 
 Meyer KM, Hopple AM, Klein A, Morris AH, Bridgham
 SD, Bohannan BJM (2019) Community structure – ecosystem function
@@ -24,7 +28,7 @@ scale of function.
 
 `talapas-output/` is where model output from the talapas HPC cluster are saved.
 
-`Figures/` contains figures output from scripts
+`figures/` contains figures output from scripts
 
 `R/` Contains scripts that run plus helper functions
 
@@ -33,7 +37,8 @@ scale of function.
 ### R
 `R/` directory contains `R` scripts that run.
 
-`0_setup.R` has code to install all required packages.
+`0_setup.R` has code to install all required packages. May need to modify to
+address your local dependencies.
 
 `1_clean_sample_data.R` takes in the raw sample date file and munges it for analysis.
 
