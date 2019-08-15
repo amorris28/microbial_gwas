@@ -109,49 +109,64 @@ ggplot(sample_data(physeq), aes(X_km, Y_km)) +
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-(G1 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc2, color = geocode)) +
+(G1 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc2, shape = geocode,
+                                       color = geocode)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
        y = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[2, 2]/pcoa$values[1, 2]) +
+  scale_shape_manual(labels = c('Site A', 'Site B', 'Site C'),
+ values = c(2, 4, 15), name = NULL) +
   scale_color_manual(name = NULL, labels = c('Site A', 'Site B', 'Site C'),
                      values = cbPalette[6:8]))
 
-(G2 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc3, color = geocode)) +
+(G2 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc3, shape = geocode, 
+                                       color = geocode)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
        y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[3, 2]/pcoa$values[1, 2]) +
+  scale_shape_manual(labels = c('Site A', 'Site B', 'Site C'),
+ values = c(2, 4, 15), name = NULL) + 
   scale_color_manual(name = NULL, labels = c('Site A', 'Site B', 'Site C'),
                      values = cbPalette[6:8]))
 
-(G3 <- ggplot(sample_data(physeq), aes(x = pc2, y = pc3, color = geocode)) +
+(G3 <- ggplot(sample_data(physeq), aes(x = pc2, y = pc3, shape = geocode,
+                                       color = geocode)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)'), 
        y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[3, 2]/pcoa$values[2, 2]) +
+  scale_shape_manual(labels = c('Site A', 'Site B', 'Site C'),
+ values = c(2, 4, 15), name = NULL) + 
   scale_color_manual(name = NULL, labels = c('Site A', 'Site B', 'Site C'),
                      values = cbPalette[6:8]))
 
-(W1 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc2, color = Wetland)) +
+(W1 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc2, shape = Wetland,
+                                       color = Wetland)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
        y = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[2, 2]/pcoa$values[1, 2]) +
+  scale_shape_manual(name = NULL, values = c(1, 19)) +
   scale_color_manual(name = NULL, values = cbPalette[2:3]))
 
-(W2 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc3, color = Wetland)) +
+(W2 <- ggplot(sample_data(physeq), aes(x = pc1, y = pc3, shape = Wetland,
+                                       color = Wetland)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
        y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[3, 2]/pcoa$values[1, 2]) +
+  scale_shape_manual(name = NULL, values = c(1, 19)) + 
   scale_color_manual(name = NULL, values = cbPalette[2:3]))
 
-(W3 <- ggplot(sample_data(physeq), aes(x = pc2, y = pc3, color = Wetland)) +
+(W3 <- ggplot(sample_data(physeq), aes(x = pc2, y = pc3, shape = Wetland, 
+                                       color = Wetland)) +
   geom_point(size = 3) +
   labs(x = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)'), 
        y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
   coord_fixed(pcoa$values[3, 2]/pcoa$values[2, 2]) +
+  scale_shape_manual(name = NULL, values = c(1, 19)) +
   scale_color_manual(name = NULL, values = cbPalette[2:3]))
 
 ggarrange(ggarrange(G1, G2, G3,
@@ -437,7 +452,7 @@ ggplot(long_asvs, aes(abund)) +
 
 # Figure 3
 
-effect_sizes <- data.frame(asv = colnames(asvs),
+effect_sizes <- data.frame(asv = colnames(sig_asvs),
            estimate = NA,
            se = NA)
 
@@ -515,15 +530,16 @@ mylabels <- c(bquote(italic(.(taxon_labels[1]))),
                 bquote(italic(.(taxon_labels[5]))),
                 bquote(italic(.(taxon_labels[6])))) 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-ggplot(effect_sizes, aes(y = asv, x = estimate, xmin = estimate - se,
-                         xmax = estimate + se, color = Phylum)) +
+(ggplot(effect_sizes, aes(y = asv, x = estimate, xmin = estimate - se,
+                         xmax = estimate + se, color = Phylum, shape = Phylum)) +
   geom_point(size = 3) +
   geom_errorbarh(height = 1/4) +
   geom_vline(xintercept = 0) +
   labs(x = 'Estimate', y = 'ASV') +
   scale_y_discrete(labels = mylabels)+
   scale_colour_manual(values=cbPalette) +
-  theme(axis.title.y = element_blank())
+  theme(axis.title.y = element_blank()) +
+  scale_shape_manual(values = c(1, 2, 15))) 
 ggsave(file = '../figures/effect_sizes.pdf', width = 8, height = 4)
 
 
