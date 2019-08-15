@@ -18,17 +18,13 @@ scale of function.
 
 ## Data
 
-`raw_data/` contains raw data as received from colleagues. This is never modified,
-but is under version control.
+`raw_data/` contains raw data as received from colleagues. This is never modified.
 
-`output/` is where modified data files are saved. These are not version
-controlled and she be recreated from source.
+`output/` is where modified data files are saved. 
 
-`talapas-output/` is where model output from the talapas HPC cluster.
+`talapas-output/` is where model output from the talapas HPC cluster are saved.
 
 `Figures/` contains figures output from scripts
-
-`Tables/` contains tables output from scripts
 
 `R/` Contains scripts that run plus helper functions
 
@@ -60,20 +56,3 @@ figures and tables.
 
 `functions.R` contains holds the user-made functions specific to this project.
 
-### Manuscript
-`manuscript/` directory contains `.tex` files to compile the manuscript
-
-`ecology.bst` is the Ecology journal bibliography style file.
-
-`latexmkrc` removes margins for easier viewing of the PDF on computers. This can
-be renamed or removed to return to normal `latex` formatting.
-
-`library.bib` is the bibliography file.
-
-`main.tex` contains the manuscript text.
-
-### Tables and Figures
-These directories are not version controlled. They should always we able to be
-recreated from source.
-`tables/` is where tables are saved from `R` and imported to `latex`
-`figures/` is where figures are saved from `R` and imported to `latex`

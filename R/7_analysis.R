@@ -37,6 +37,7 @@ theme_set(theme_bw())
 #+ r import_data
 physeq <- readRDS('../output/physeq_vst.rds')
 physeq_raw <- readRDS('../output/physeq_raw.rds')
+taxon_table <- read.csv('../output/taxon_table.csv')
 
 # Calculate richness from untransformed read counts using breakaway
 richness <- breakaway(physeq_raw)
@@ -65,6 +66,8 @@ sample_data(physeq)$Y_km <- sample_data(physeq)$Y / 1000
 
 #' # Traditional correlations
 
+# Figure 1
+
 (pmoa_plot <- sample_data(physeq) %>% 
   ggplot(aes(x = pmoa_copy_num, y = pos_lowk)) +
   geom_point() +
@@ -83,6 +86,8 @@ ggarrange(pmoa_plot, rich_plot,
 
 ggsave(file = '../figures/trad_cors.pdf', width = 4*2, height = 4)
 
+# Table 1
+
 pmoa_fit <- lm(Low_final_k ~ pmoa_copy_num, data = as(sample_data(physeq), 'data.frame'))
 summary(pmoa_fit)
 glance(pmoa_fit)
@@ -100,6 +105,7 @@ ggplot(sample_data(physeq), aes(X_km, Y_km)) +
   stat_smooth() +
   coord_fixed()
 
+# Figure 2
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
@@ -189,6 +195,8 @@ ggplot(mapping = aes(x = c(geo_dis), y = c(com_dis))) +
   geom_point()
 ggplot(mapping = aes(x = c(geo_dis), y = c(env_dis))) + 
   geom_point()
+
+# Table 2
 
 print(mantel(com_sim_bin, geo_sim))
 print(mantel(com_sim, geo_sim))
@@ -371,7 +379,6 @@ ggplot(all_model_output, aes(x = p.value)) +
 
 #' ## Number of taxa identified with each covariate
 #+ r n_taxa_ided
-taxon_table <- read.csv('../output/taxon_table.csv')
 n_taxa <- 
 all_model_output %>% 
   left_join(taxon_table) %>% 
@@ -398,16 +405,16 @@ taxa <-
 sig_taxa_all %>% 
   select(comps, Phylum:Genus)
 
-sig_taxa_all %>% 
-  filter(comps == 'gce')  %>% 
-  arrange(Phylum:Genus) %>% 
-  select(Phylum:Genus) %>% 
-  kable('latex', booktabs = T, caption = 'Taxa significantly correlated with
-        high-affinity methane oxidation rate after controlling for geographic
-        proximity, environmental similarity, and community structure. 
-        Significance determined by controlling
-        the false discovery rate (q \\textless{} 0.05).') %>% 
-  writeLines('../tables/all_taxa_sig.tex')
+#sig_taxa_all %>% 
+#  filter(comps == 'gce')  %>% 
+#  arrange(Phylum:Genus) %>% 
+#  select(Phylum:Genus) %>% 
+#  kable('latex', booktabs = T, caption = 'Taxa significantly correlated with
+#        high-affinity methane oxidation rate after controlling for geographic
+#        proximity, environmental similarity, and community structure. 
+#        Significance determined by controlling
+#        the false discovery rate (q \\textless{} 0.05).') %>% 
+#  writeLines('../tables/all_taxa_sig.tex')
 sig_taxa_gce <- sig_taxa_all %>% 
   filter(comps == 'gce')
 
@@ -427,6 +434,8 @@ ggplot(long_asvs, aes(abund, pos_lowk)) +
 ggplot(long_asvs, aes(abund)) +
   facet_wrap(~ asv) + 
   geom_histogram()
+
+# Figure 3
 
 effect_sizes <- data.frame(asv = colnames(asvs),
            estimate = NA,
@@ -517,18 +526,8 @@ ggplot(effect_sizes, aes(y = asv, x = estimate, xmin = estimate - se,
   theme(axis.title.y = element_blank())
 ggsave(file = '../figures/effect_sizes.pdf', width = 8, height = 4)
 
-effect_sizes
-# Plot largest estimate asv
-asv <- as(otu_table(physeq)[, 'eb30799fb82dcac24f5d8629d8903ef2'], 'vector')
-class(asv)
-hist(asv)
 
-sample_data <- as(sample_data(physeq), 'data.frame')
-class(lowk)
-ggplot(sample_data, mapping = aes(asv, pos_lowk, color = Land_type)) + 
-  geom_point()
-hist(otu_table(physeq)[, 'eb30799fb82dcac24f5d8629d8903ef2'])
-
+# Table 3
 
 sum(pull(sig_taxa_all[sig_taxa_all$comps == 'e', ], asv) %in% pull(sig_taxa_all[sig_taxa_all$comps == 'n', ], asv))
 
@@ -553,215 +552,14 @@ data.frame(
            n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
                      length(ge_), length(ce_), length(gce_)))
 
-comp_adds_removes %>% 
-  kable('latex', booktabs = TRUE, 
-        caption = paste0("Number of taxa correlated with high-affinity
-                         methane oxidation. Tested ", 
-                         length(unique(all_model_output$asv)), " taxa.
-        Significant taxa determined by controlling the false-discovery rate
-        (q \\textless{} 0.05). n = ", nrow(all_data)),
-        col.names = c('Components', 'Removed', 'Added', 'Significant')) %>% 
-  kable_styling() %>% 
-  writeLines('../tables/all_taxa_n.tex')
-
-# Shared
-
-sum(!g_ %in% ce_)
-sum(!ce_ %in% g_)
-sum(!c_ %in% e_)
-sum(!c_ %in% e_)
-
-comp_shared <- 
-data.frame(
-           comps = c('c in g', 'c in e', 'c in gc', 'c in ge', 'c in ce', 'c in gce', 
-                     'g in c', 'g in e', 'g in gc', 'g in ge', 'g in ce', 'g in gce',
-                     'e in c', 'e in c', 'e in gc', 'e in ge', 'e in ce', 'e in gce'),
-           comparisons = c(sum(!c_ %in% g_), sum(!c_ %in% e_), sum(!c_ %in% gc_), 
-                       sum(!c_ %in% ge_), sum(!c_ %in% ce_), sum(!c_ %in% gce_), 
-                       sum(!g_ %in% e_), sum(!g_ %in% ge_), sum(!g_ %in% gc_)),
-           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
-                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
-                       sum(!gce_ %in% n_)),
-           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
-                     length(gc_), length(ce_), length(gce_)))
-
-#' ### Wetland Model
-
-#+ r wetland_taxa
-
-wet_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(p.value <= 0.05 / (length(unique(asv)))) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
-  kable() %>% 
-  kable_styling() #%>% 
-#  collapse_rows(columns = 1)
-
-sig_taxa_wet <- 
-wet_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05 ) %>% 
-  select(comps, asv, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus)
-
-sum(pull(sig_taxa_wet[sig_taxa_wet$comps == 'e', ], asv) %in% pull(sig_taxa_wet[sig_taxa_wet$comps == 'n', ], asv))
-
-n_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'n', ], asv)
-g_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'g', ], asv)
-c_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'c', ], asv)
-e_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'e', ], asv)
-gc_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'gc', ], asv)
-ge_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'ge', ], asv)
-ce_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'ce', ], asv)
-gce_ <- pull(sig_taxa_wet[sig_taxa_wet$comps == 'gce', ], asv)
-
-comp_adds_removes <- 
-data.frame(
-           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
-           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
-                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
-                       sum(!n_ %in% gce_)),
-           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
-                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
-                       sum(!gce_ %in% n_)),
-           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(ge_),
-                     length(gc_), length(ce_), length(gce_)))
-
-#' ### Upland Model
-
-#+ r upland_taxa
-
-dry_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
-  kable() %>% 
-  kable_styling() %>% 
-#  collapse_rows(columns = 1) %>% 
-  save_kable(file = '../tables/dry_taxa_qvalue.html')
-
-sig_taxa_dry_geo <- 
-dry_model_output_geo  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05 ) %>% 
-  select(comps, asv, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus)
-
-sig_taxa_dry <- 
-dry_model_output  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05 ) %>% 
-  select(comps, asv, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus)
-
-
-n_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'n', ], asv)
-g_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'g', ], asv)
-c_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'c', ], asv)
-e_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'e', ], asv)
-gc_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gc', ], asv)
-ge_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ge', ], asv)
-ce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ce', ], asv)
-gce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gce', ], asv)
-
-comp_adds_removes <- 
-data.frame(
-           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
-           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
-                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
-                       sum(!n_ %in% gce_)),
-           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
-                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
-                       sum(!gce_ %in% n_)),
-           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
-                     length(ge_), length(ce_), length(gce_)))
-#comp_adds_removes$math <- 124 - comp_adds_removes$removed + comp_adds_removes$added
-comp_adds_removes %>% 
-  kable('latex', booktabs = T, caption = "N taxa identified with upland data",
-        col.names = c('Components', 'Removed', 'Added', 'Significant')) %>% 
-  kable_styling() %>% 
-  writeLines('../tables/dry_taxa_n.tex')
-#' ### Binary Upland Model
-
-#+ r upland_taxa
-
-dry_model_output_bin  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05) %>% 
-  select(comps, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus) %>% 
-  kable() %>% 
-  kable_styling() %>% 
-#  collapse_rows(columns = 1) %>% 
-  save_kable(file = '../tables/dry_taxa_qvalue_bin.html')
-
-sig_taxa_dry <- 
-dry_model_output_bin  %>% 
-  left_join(taxon_table) %>% 
-  group_by(comps) %>% 
-  filter(qvalues < 0.05 ) %>% 
-  select(comps, asv, Phylum:Genus) %>% 
-  arrange(comps, Phylum, Class, Order, Family, Genus)
-
-
-n_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'n', ], asv)
-g_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'g', ], asv)
-c_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'c', ], asv)
-e_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'e', ], asv)
-gc_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gc', ], asv)
-ge_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ge', ], asv)
-ce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'ce', ], asv)
-gce_ <- pull(sig_taxa_dry[sig_taxa_dry$comps == 'gce', ], asv)
-
-comp_adds_removes <- 
-data.frame(
-           comps = c('n', 'g', 'c', 'e', 'gc', 'ge', 'ce', 'gce'), 
-           removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
-                       sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
-                       sum(!n_ %in% gce_)),
-           added = c(0, sum(!g_ %in% n_), sum(!c_ %in% n_), sum(!e_ %in% n_), 
-                       sum(!gc_ %in% n_), sum(!ge_ %in% n_), sum(!ce_ %in% n_), 
-                       sum(!gce_ %in% n_)),
-           n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
-                     length(ge_), length(ce_), length(gce_)))
-#comp_adds_removes$math <- 124 - comp_adds_removes$removed + comp_adds_removes$added
-comp_adds_removes %>% 
-  kable(caption = "N taxa identified with binary upland data",
-        col.names = c('Components', 'Removed', 'Added', 'n Significant')) %>% 
-  kable_styling() %>% 
-  save_kable(file = '../tables/dry_taxa_n_qvalue_bin.html')
-
-#cbind(added = rep('a', 50), sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'e', ], asv), ]),
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'c', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'g', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'gc', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'ge', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'ce', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'n', ][!pull(sig_taxa[sig_taxa$comps == 'n', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'gce', ], asv), ])
-#
-#sig_taxa[sig_taxa$comps == 'e', ][!pull(sig_taxa[sig_taxa$comps == 'e', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'c', ][!pull(sig_taxa[sig_taxa$comps == 'c', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#sig_taxa[sig_taxa$comps == 'g', ][!pull(sig_taxa[sig_taxa$comps == 'g', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#
-#sig_taxa[sig_taxa$comps == 'gc', ][!pull(sig_taxa[sig_taxa$comps == 'gc', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#
-#sig_taxa[sig_taxa$comps == 'ge', ][!pull(sig_taxa[sig_taxa$comps == 'ge', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#
-#sig_taxa[sig_taxa$comps == 'ce', ][!pull(sig_taxa[sig_taxa$comps == 'ce', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ],
-#
-#sig_taxa[sig_taxa$comps == 'gce', ][!pull(sig_taxa[sig_taxa$comps == 'gce', ], asv) %in% pull(sig_taxa[sig_taxa$comps == 'n', ], asv), ])
-#)
-#
-#
-#
-
-
+#comp_adds_removes %>% 
+#  kable('latex', booktabs = TRUE, 
+#        caption = paste0("Number of taxa correlated with high-affinity
+#                         methane oxidation. Tested ", 
+#                         length(unique(all_model_output$asv)), " taxa.
+#        Significant taxa determined by controlling the false-discovery rate
+#        (q \\textless{} 0.05). n = ", nrow(all_data)),
+#        col.names = c('Components', 'Removed', 'Added', 'Significant')) %>% 
+#  kable_styling() %>% 
+#  writeLines('../tables/all_taxa_n.tex')
 
