@@ -21,15 +21,14 @@ library(broman)
 library(varComp)
 library(vegan)
 library(qvalue)
-#library(knitr)
 library(kableExtra)
 library(phyloseq)
 library(gap)
-#library(lmtest)
-source('functions.R')
-#library(DivNet)
 library(breakaway)
 library(ape)
+library(ggpubr)
+
+source('functions.R')
 
 #+ r options
 options(knitr.kable.NA = '')
@@ -38,21 +37,18 @@ theme_set(theme_bw())
 #+ r import_data
 physeq <- readRDS('../output/physeq_vst.rds')
 physeq_raw <- readRDS('../output/physeq_raw.rds')
-#divnet <- readRDS('../talapas-output/divnet_asv.rds')
+
+# Calculate richness from untransformed read counts using breakaway
 richness <- breakaway(physeq_raw)
 plot(richness)
-
 sample_data(physeq)$rich_breakaway <- summary(richness)$estimate
+
 # Add variables
 com_mat <- otu_table(physeq)
-sample_data(physeq)$rich <- rowSums(com_mat > 0)
-sample_data(physeq)$shan <- diversity(com_mat, "shannon")
-sample_data(physeq)$simp <- diversity(com_mat, "simpson")
 bray <- vegdist(otu_table(physeq))
 pcoa <- pcoa(bray)
 
-plot(sample_data(physeq)$rich, sample_data(physeq)$rich_breakaway)
-
+# Screeplot for bray-curtis PCoA
 ggplot(mapping = aes(seq_len(length(pcoa$values[, 1])), pcoa$values[, 1])) +
        geom_col() +
        labs(y = "Eigenvalues", x = "Principal Coordinate")
@@ -61,82 +57,25 @@ sample_data(physeq)$pc1 <- pcoa$vectors[, 1]
 sample_data(physeq)$pc2 <- pcoa$vectors[, 2]
 sample_data(physeq)$pc3 <- pcoa$vectors[, 3]
 
+# Convert methane oxidation from negative to positive for easier interpetation
 sample_data(physeq)$pos_lowk <- -sample_data(physeq)$Low_final_k
 
 sample_data(physeq)$X_km <- sample_data(physeq)$X / 1000
 sample_data(physeq)$Y_km <- sample_data(physeq)$Y / 1000
-#' # Overview
-#' 
-#' The goal of this project is to answer the question: is microbial community 
-#' composition important for determining the rate of ecosystem-scale functions independent 
-#' of the underlying environmental variation? To address this, I partitioned
-#' variation between community and environment (while controlling for geographic
-#' location using site as a factor). I also identified taxa that are significantly
-#' correlated with function after accounting for the covariance of geography,
-#' environment, and community similarity. Currently, significant taxa are identified
-#' using the Bonferroni correction (with the number of non-independent tests equal
-#' to the number of taxa included in each model). Eventually, I would like to
-#' determine p.values using a permutation test.
-#'
-#' These data were collected from Gabon, Africa and include `r n_samp` samples.
-#' Microbial community data include 16S rRNA gene sequences (only DNA not RNA/cDNA)
-#' with `r n_asvs` ASVs from the DADA2 pipeline. The community matrix was transformed
-#' using the `varianceStabilizingTransformation` from `DESeq2`.
-#' This analysis only includes high affinity
-#' methane oxidation measurements (Low Final K). The spatial data were converted
-#' from latitude/longitude to distance in meters by converting to UTM. 
-#' Environmental data include bulk density, soil moisture, percent nitrogen, and 
-#' percent carbon.
-#'
-#' # Overall Summary
-#'
-#' The traditional approach to microbial ecosystem function studies as I argue in the
-#' paper is to correlate some aspect of microbial biodiversity such as abundance,
-#' richness, diversity, or composition with the rate of an ecosystem function.
-#' This largely fails as demonstrated by the Rocca and Graham papers. Here I
-#' perform some of these analyses (PC regression, diversity, copy number/transcript
-#' number, and various environmental factors) and my results agree with them.
-#' Basically, the effectiveness of these hypotheses varies by function, but generally
-#' don't hold up looking across ecosystems. For Low_final_k, a phylogenetically
-#' conserved function (Martiny et al.) composition seems important. Although,
-#' I'm arguing methanotrophs might not be the important limiting factor so
-#' conservatism might not be important. Using PC regression, I identify some
-#' candidate taxa.
-#' 
-#' In the paper I argue that this problem is less analagous to traditional
-#' BEF literature where some variation in biodiversity is manipulated or 
-#' measured in the field. Generally the function of interest there is biomass or
-#' productivity at the community-level. In our case, we're sampling the
-#' natural variation in microbial community composition across a landscape that
-#' varies in environmental conditions and geographic distance between sites.
-#' In addition, the shared history and community interactions of a site
-#' could like to species associations unrelated to ecosystem function.
-#' Therefore, we need to take into account these covariates, just like in 
-#' GWAS studies.
-#'
-#' To that end, I use linear mixed-effects models to estimate the variance
-#' explained by community and environment and used location as a factor
-#' to control for variation among the clusters of sites. After including
-#' these covariates in the model, many of the taxa drop out. 
-#'
-#' # Traditional correlations
 
+#' # Traditional correlations
 
 (pmoa_plot <- sample_data(physeq) %>% 
   ggplot(aes(x = pmoa_copy_num, y = pos_lowk)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation rate (-k)')))
-#  annotate(geom = 'text', x = min(sample_data(physeq)$pmoa_copy_num, na.rm = TRUE), 
-#            y = max(sample_data(physeq)$pos_lowk), label = 'A', size = 6)
 
 (rich_plot <- sample_data(physeq) %>% 
   ggplot(mapping = aes(x = rich_breakaway, y = pos_lowk)) +
   geom_point() +
   geom_smooth(method = 'lm') +
   labs(x = 'Richness', y = expression('Methane oxidation rate (-k)')))
-#  annotate(geom = 'text', x = min(sample_data(physeq)$shan),
-#           y = max(sample_data(physeq)$pos_lowk), label = 'B', size = 6)
 
 ggarrange(pmoa_plot, rich_plot,
           labels = "AUTO",
@@ -152,25 +91,13 @@ rich_fit <- lm(Low_final_k ~ rich_breakaway, data = as(sample_data(physeq), 'dat
 summary(rich_fit)
 glance(rich_fit)
 
-#shan_fit_no_outlier <- lm(Low_final_k ~ shan, data = as(sample_data(physeq)[sample_data(physeq)$shan > 5, ], 'data.frame'))
-#summary(shan_fit_no_outlier)
-#glance(shan_fit_no_outlier)
-#
 rbind(tidy(pmoa_fit)[2, ], tidy(rich_fit)[2, ])
 
 # Pull out important axes an plot pairwise with axes proportional to var expl
 
-Z <- predict(loess(Y_km ~ X_km, as(sample_data(physeq), 'data.frame'))) 
-
 ggplot(sample_data(physeq), aes(X_km, Y_km)) +
   geom_point() +
   stat_smooth() +
-  coord_fixed()
-
-ggplot(sample_data(physeq), aes(x = X_km, y = Y_km, color = Mois_cont)) +
-  geom_point(size = 3, alpha = 0.1) +
-  scale_color_gradient(name = "Moisture") +
-  scale_shape(name = 'Site') +
   coord_fixed()
 
 
@@ -234,193 +161,6 @@ ggarrange(W1, W2, W3,
           common.legend = TRUE))
 ggsave('../figures/pcoa_multi.pdf', width = 5*2, height = 4*3)
 
-#ggplot(sample_data(physeq), aes(x = pc1, y = pc2, color = interaction(geocode, Wetland))) +
-#  geom_point(size = 3) +
-#  labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
-#       y = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)')) +
-#  coord_fixed(pcoa$values[2, 2]/pcoa$values[1, 2]) +
-#  scale_color_manual(name = "Wetland by Site", labels = c('Upland, Site A',
-#       'Upland, Site B', 'Upland, Site C', 'Wetland, Site B', 'Wetland, Site C'),
-#  values = my_colors)
-#ggsave(file = '../figures/pc1pc2.pdf', width = 5, height = 4)
-#
-#ggplot(sample_data(physeq), aes(x = pc2, y = pc3, color = interaction(geocode, Wetland))) +
-#  geom_point(size = 3) +
-#  labs(x = paste0('PC 2 (', myround(pcoa$values[2, 2]*100, 1),'%)'), 
-#       y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
-#  coord_fixed(pcoa$values[3, 2]/pcoa$values[2, 2]) +
-#  scale_color_manual(name = "Wetland by Site", labels = c('Upland, Site A',
-#       'Upland, Site B', 'Upland, Site C', 'Wetland, Site B', 'Wetland, Site C'),
-#  values = my_colors)
-# # values = c('firebrick', 'red', 'pink', 'blue', 'lightblue'))
-#ggsave(file = '../figures/pc2pc3.pdf', width = 5, height = 4)
-#
-#ggplot(sample_data(physeq), aes(x = pc1, y = pc3, color = interaction(geocode, Wetland))) +
-#  geom_point(size = 3) +
-#  labs(x = paste0('PC 1 (', myround(pcoa$values[1, 2]*100, 1),'%)'), 
-#       y = paste0('PC 3 (', myround(pcoa$values[3, 2]*100, 1),'%)')) +
-#  coord_fixed(pcoa$values[3, 2]/pcoa$values[1, 2]) +
-#  scale_color_manual(name = "Wetland by Site", labels = c('Upland, Site A',
-#       'Upland, Site B', 'Upland, Site C', 'Wetland, Site B', 'Wetland, Site C'),
-#  values = my_colors)
-# # values = c('firebrick', 'red', 'pink', 'blue', 'lightblue'))
-#ggsave(file = '../figures/pc1pc3.pdf', width = 5, height = 4)
-
-#+ trad_correlations
-
-sample_data <- as(sample_data(physeq), 'data.frame')
-
-sample_data(physeq) %>% 
-  ggplot(mapping = aes(x = pmoa_copy_num, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = expression(italic('pmoA') ~ 'copy number'), y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = 0, y = 2.5, label = 'A', size = 6)
-
-ggsave(file = '../figures/lowk_pmoa.pdf', width = 4, height = 4)
-
-sample_data(physeq) %>% 
-  ggplot(mapping = aes(x = pc1, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = 'PC1', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(sample_data(physeq)$pc1),
-           y = 2.5, label = 'B', size = 6)
-
-ggsave(file = '../figures/lowk_pc1.pdf', width = 4, height = 4)
-
-ggplot(sample_data(physeq), aes(x = richness, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = 'Richness', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(sample_data(physeq)$richness), y = 2.5, label = 'C', size = 6)
-
-ggsave(file = '../figures/lowk_rich.pdf', width = 4, height = 4)
-
-# Low K and Shannon, w/ and w/o outlier
-
-ggplot(sample_data(physeq), aes(x = shannon, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = 'Shannon Diversity', y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(sample_data(physeq)$shannon), y = 2.5, label = 'D', size = 6)
-
-ggsave(file = '../figures/lowk_shan.pdf', width = 4, height = 4)
-
-ggplot(sample_data[sample_data$shannon > 5, ], aes(x = shannon, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = 'Shannon Diversity', y = expression('Methane oxidation (k)')) #+ 
-#  annotate(geom = 'text', x = min(sample_data(physeq)[sample_data$shannon > 5, ]$shannon), y = 2.5, label = 'D', size = 6)
-
-
-ggsave(file = '../figures/lowk_shan_no_outliers.pdf', width = 4, height = 4)
-
-# Low k and Simpson, w/ and w/o outlier
-
-ggplot(sample_data, aes(x = simpson, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = "Simpson Diversity", y = expression('Methane oxidation (k)')) + 
-  annotate(geom = 'text', x = min(sample_data(physeq)$simpson), y = 2.5, label = 'E', size = 6)
-
-ggsave(file = '../figures/lowk_simp.pdf', width = 4, height = 4)
-
-ggplot(sample_data[sample_data$simpson > 0.998, ], aes(x = simpson, y = Low_final_k)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(x = "Simpson Diversity", y = expression('Methane oxidation (k)')) #+ 
-#  annotate(geom = 'text', x = min(sample_data(physeq)$simpson), y = 2.5, label = 'E', size = 6)
-
-
-ggsave(file = '../figures/lowk_simp_no_outliers.pdf', width = 4, height = 4)
-
-trad_cor_table <- data.frame(predictor = c('\\textit{pmoA} abundance',
-                                           'PC1', 'Richness', 'Shannon Diversity',
-                                           'Simpson Diversity'),
-estimate = NA,
-SE = NA,
-t.value = NA,
-p.value = NA,
-r.squared = NA)
-
-fit <- lm(Low_final_k ~ pmoa_copy_num, data = sample_data)
-trad_cor_table[1, 2] <- summary(fit)$coefficients[2, 1]
-trad_cor_table[1, 3] <- summary(fit)$coefficients[2, 2]
-trad_cor_table[1, 4] <- summary(fit)$coefficients[2, 3]
-trad_cor_table[1, 5] <- summary(fit)$coefficients[2, 4]
-trad_cor_table[1, 6] <- summary(fit)$r.squared
-
-fit <- lm(Low_final_k ~ pc1, data = sample_data)
-trad_cor_table[2, 2] <- summary(fit)$coefficients[2, 1]
-trad_cor_table[2, 3] <- summary(fit)$coefficients[2, 2]
-trad_cor_table[2, 4] <- summary(fit)$coefficients[2, 3]
-trad_cor_table[2, 5] <- summary(fit)$coefficients[2, 4]
-trad_cor_table[2, 6] <- summary(fit)$r.squared
-
-fit <- lm(Low_final_k ~ richness, data = sample_data)
-trad_cor_table[3, 2] <- summary(fit)$coefficients[2, 1]
-trad_cor_table[3, 3] <- summary(fit)$coefficients[2, 2]
-trad_cor_table[3, 4] <- summary(fit)$coefficients[2, 3]
-trad_cor_table[3, 5] <- summary(fit)$coefficients[2, 4]
-trad_cor_table[3, 6] <- summary(fit)$r.squared
-
-fit <- lm(Low_final_k ~ shannon, data = sample_data)
-trad_cor_table[4, 2] <- summary(fit)$coefficients[2, 1]
-trad_cor_table[4, 3] <- summary(fit)$coefficients[2, 2]
-trad_cor_table[4, 4] <- summary(fit)$coefficients[2, 3]
-trad_cor_table[4, 5] <- summary(fit)$coefficients[2, 4]
-trad_cor_table[4, 6] <- summary(fit)$r.squared
-
-fit <- lm(Low_final_k ~ simpson, data = sample_data)
-trad_cor_table[5, 2] <- summary(fit)$coefficients[2, 1]
-trad_cor_table[5, 3] <- summary(fit)$coefficients[2, 2]
-trad_cor_table[5, 4] <- summary(fit)$coefficients[2, 3]
-trad_cor_table[5, 5] <- summary(fit)$coefficients[2, 4]
-trad_cor_table[5, 6] <- summary(fit)$r.squared
-
-trad_cor_table$p.value <- 
-  c(myround(trad_cor_table$p.value[1], 3),
-    formatC(trad_cor_table$p.value[c(2)], format = "e", digits = 2),
-    myround(trad_cor_table$p.value[3:5], 3))
-trad_cor_table[c(2), 5] <- 
-  cell_spec(trad_cor_table[c(2), 5],  "latex", bold = T)
-
-trad_cor_table %>% 
-  mutate(estimate = paste0(myround(estimate, 3), " (", myround(SE, 3), ")")) %>% 
-  mutate(t.value = myround(t.value, 3)) %>% 
-  select(-SE) %>% 
-  kable('latex', booktabs = TRUE, escape = FALSE, digits = 3,
-        caption = 'Aspects of microbial community structure. Significant p-values
-        are bolded (p \\textless{} 0.05). n = 44 except for \\textit{pmoA} where n = 42',
-        col.names = c('Variable', 'Estimate (SE)', 't.value', 'p.value', '$R^2$')) %>% 
-  writeLines('../tables/trad_cor_table.tex')
-
-
-#'
-#' ## Summary of correlations
-#'
-#' There is a significant, but marginal difference between wetland and upland sites.
-#' Vmax appears more strongly correlated with edaphic properties (moisture, nitrogen,
-#' bulk density, carbon) and abundance than Low_final_k. In contrast, Low_final_k is
-#' more strongly correlated with composition in the form of PC axis 1. Neither process
-#' is correlated with species richness or diversity. 
-#' 
-#'
-#' # Variance Component Analysis
-#' 
-#' This analysis fits linear mixed-effects models using the `varComp` package
-#' version `r packageVersion('varComp')`. The fixed effect portion of each model
-#'  is `Low final K ~ taxon abundance + location` with random effect
-#' variance-covariance matrices for community similarity (from Bray-Curtis
-#' distance) and environmental similarity (Euclidean distance) with all variables
-#' centered and scaled to unit variance before calculating similarity metrics.
-#' 
-#' For each set of analyses (all data, wetland data, and upland data) asvs were
-#' subset to include only asvs present in more than one sample (so those only present
-#' in zero samples or one sample were removed).
-
-
 #' ## Collinearity
 
 #+ collinear_all_data
@@ -445,8 +185,6 @@ geo_dis <- as.matrix(dist(as.matrix(scale(sample_data(physeq)[, c('X', 'Y')]))))
 env_sim <- calc_sim_matrix(sample_data(physeq)[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')])
 env_dis <- as.matrix(dist(as.matrix(scale(sample_data(physeq)[, c('Bulk_dens', 'Mois_cont', 'N_percent', 'C_percent')]))))
 
-dim(geo_sim)
-dim(com_sim)
 ggplot(mapping = aes(x = c(geo_dis), y = c(com_dis))) + 
   geom_point()
 ggplot(mapping = aes(x = c(geo_dis), y = c(env_dis))) + 
@@ -458,172 +196,155 @@ print(mantel(com_sim_bin, env_sim))
 print(mantel(com_sim, env_sim))
 print(mantel(geo_sim, env_sim))
 
-#' ## Geography Correlated with Community Composition
-#'
-#' Community and geography are correlated as demonstrated by the Mantel test for
-#' the community similarity matrix and the geographic similarity matrix (see Mantel test output). 
-#' Even after variance stabilization, the community similarity metric is skewed
-#' towards one end of the variance space while geography uses up more of the 
-#' similarity matrix space (see histograms). This results in geography
-#' explaining virtually all of the variation in ecosystem function.
-#' Since sites are clustered around three locations,
-#' I coded geography as three factors (one for each cluster of sites)
-#'Also, wetland/upland covaries with those three sites, but moisture content is
-#'included in the environmental similarity matrix and should capture that variation
-#' To insure that the covariation between geographic site and wetland/upland
-#' isn't having a major influence on the results, I ran the models with all of the data
-#' and then again within wetland and within upland
-
 #' # Variance Components
 
-
-#+ r variance components
-Low_final_k <- sample_data(physeq)$Low_final_k
-geocode <- sample_data(physeq)$geocode
-com <- cholRoot(com_sim)
+##+ r variance components
+#Low_final_k <- sample_data(physeq)$Low_final_k
+#geocode <- sample_data(physeq)$geocode
+#com <- cholRoot(com_sim)
 #geo <- geocode
-geo <- cholRoot(geo_sim)
-env <- cholRoot(env_sim)
-
-var_comp_pvalues <- data.frame(model = 
-                               c('CH4 \\textasciitilde 1 + com', 
-                                 'CH4 \\textasciitilde 1 + geo', 
-                                 'CH4 \\textasciitilde 1 + env', 
-                                 'CH4 \\textasciitilde 1 + geo + com', 
-                                 'CH4 \\textasciitilde 1 + geo + com', 
-                                 'CH4 \\textasciitilde 1 + geo + env', 
-                                 'CH4 \\textasciitilde 1 + geo + env', 
-                                 'CH4 \\textasciitilde 1 + com + env', 
-                                 'CH4 \\textasciitilde 1 + com + env', 
-                                 'CH4 \\textasciitilde 1 + geo + com + env', 
-                                 'CH4 \\textasciitilde 1 + geo + com + env', 
-                                 'CH4 \\textasciitilde 1 + geo + com + env'),
-           component = c('com', 'geo', 'env', 'geo', 'com', 'env', 'geo', 'com', 'env', 'env', 'geo', 'com'),
-           varcomp = NA,
-           se = NA,
-           p.value = NA)
-
-# Single
-# Com
-fit0 <- varComp(Low_final_k ~ 1)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[1] <- comps$h2G
-var_comp_pvalues$se[1] <- sqrt(comps$Varh2G)
-
-var_comp_pvalues$p.value[1] = p.value(varComp.test(fit, fit0))
-
-# Geo
-fit <- varComp(Low_final_k ~ 1, random =  ~ geo)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[2] <- comps$h2G
-var_comp_pvalues$se[2] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[2] = p.value(varComp.test(fit, fit0))
-
-# Env
-fit <- varComp(Low_final_k ~ 1, random =  ~ env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[3] <- comps$h2G
-var_comp_pvalues$se[3] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[3] = p.value(varComp.test(fit, fit0))
-
-# Geo Com
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[4] <- comps$h2GE
-var_comp_pvalues$se[4] <- sqrt(comps$Varh2GE)
-var_comp_pvalues$p.value[4] = p.value(varComp.test(fit, fit0))
-
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[5] <- comps$h2G
-var_comp_pvalues$se[5] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[5] = p.value(varComp.test(fit, fit0))
-
-# Geo Env
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
-fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[6] <- comps$h2GE
-var_comp_pvalues$se[6] <- sqrt(comps$Varh2GE)
-var_comp_pvalues$p.value[6] = p.value(varComp.test(fit, fit0))
-
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
-fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[7] <- comps$h2G
-var_comp_pvalues$se[7] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[7] = p.value(varComp.test(fit, fit0))
-
-# Com Env
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[8] <- comps$h2G
-var_comp_pvalues$se[8] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[8] = p.value(varComp.test(fit, fit0))
-
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[9] <- comps$h2GE
-var_comp_pvalues$se[9] <- sqrt(comps$Varh2GE)
-var_comp_pvalues$p.value[9] = p.value(varComp.test(fit, fit0))
-
-# Geo Com Env
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[10] <- comps$h2GE[2]
-var_comp_pvalues$se[10] <- sqrt(comps$Varh2GE[2])
-var_comp_pvalues$p.value[10] = p.value(varComp.test(fit, fit0))
-
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + env)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[11] <- comps$h2GE[1]
-var_comp_pvalues$se[11] <- sqrt(comps$Varh2GE[1])
-var_comp_pvalues$p.value[11] = p.value(varComp.test(fit, fit0))
-
-fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
-fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
-comps <- varCompGE(fit)
-var_comp_pvalues$varcomp[12] <- comps$h2G
-var_comp_pvalues$se[12] <- sqrt(comps$Varh2G)
-var_comp_pvalues$p.value[12] = p.value(varComp.test(fit, fit0))
-
-var_comp_pvalues$varcomp <- paste0(myround(var_comp_pvalues$varcomp, 2), ' (',
-                                   myround(var_comp_pvalues$se, 2), ')')
-
-var_comp_pvalues$p.value <- 
-  c(formatC(var_comp_pvalues$p.value[c(1)], format = "e", digits = 2), 
-    myround(var_comp_pvalues$p.value[2:7], 3),
-    formatC(var_comp_pvalues$p.value[c(8)], format = "e", digits = 2),
-    myround(var_comp_pvalues$p.value[9:12], 3))
-var_comp_pvalues[c(1, 2, 3, 7, 8), 5] <- 
-  cell_spec(var_comp_pvalues[c(1, 2, 3, 7, 8), 5],  "latex", bold = T)
-#var_comp_pvalues[12, 5] <- 
-#  cell_spec(var_comp_pvalues[12,5],  "latex", italic = T)
-var_comp_pvalues <- var_comp_pvalues[, -4]
-
-var_comp_pvalues %>% 
-  kable('latex', booktabs = T, digits = 2, escape = F,
-        caption = paste0('Variance component estimates from intercept-only models predicting the rate of high-affinity methane oxidation from soil. p-values
-        determined by linear score test comparing nested models with and without
-        each variance component. Significant p-values are bolded (p \\textless{} 0.05). 
-        n = 44.'), 
-        col.names = c('Model', 'Component', 'Estimate (SE)', 'p-value')) %>% 
-  collapse_rows(columns = 1) %>% 
-  writeLines('../tables/var_comp_pvalues.tex')
+##geo <- cholRoot(geo_sim)
+#env <- cholRoot(env_sim)
+#
+#var_comp_pvalues <- data.frame(model = 
+#                               c('CH4 \\textasciitilde 1 + com', 
+#                                 'CH4 \\textasciitilde 1 + geo', 
+#                                 'CH4 \\textasciitilde 1 + env', 
+#                                 'CH4 \\textasciitilde 1 + geo + com', 
+#                                 'CH4 \\textasciitilde 1 + geo + com', 
+#                                 'CH4 \\textasciitilde 1 + geo + env', 
+#                                 'CH4 \\textasciitilde 1 + geo + env', 
+#                                 'CH4 \\textasciitilde 1 + com + env', 
+#                                 'CH4 \\textasciitilde 1 + com + env', 
+#                                 'CH4 \\textasciitilde 1 + geo + com + env', 
+#                                 'CH4 \\textasciitilde 1 + geo + com + env', 
+#                                 'CH4 \\textasciitilde 1 + geo + com + env'),
+#           component = c('com', 'geo', 'env', 'geo', 'com', 'env', 'geo', 'com', 'env', 'env', 'geo', 'com'),
+#           varcomp = NA,
+#           se = NA,
+#           p.value = NA)
+#
+## Single
+## Com
+#fit0 <- varComp(Low_final_k ~ 1)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[1] <- comps$h2G
+#var_comp_pvalues$se[1] <- sqrt(comps$Varh2G)
+#
+#var_comp_pvalues$p.value[1] = p.value(varComp.test(fit, fit0))
+#
+## Geo
+#fit <- varComp(Low_final_k ~ 1, random =  ~ geo)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[2] <- comps$h2G
+#var_comp_pvalues$se[2] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[2] = p.value(varComp.test(fit, fit0))
+#
+## Env
+#fit <- varComp(Low_final_k ~ 1, random =  ~ env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[3] <- comps$h2G
+#var_comp_pvalues$se[3] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[3] = p.value(varComp.test(fit, fit0))
+#
+## Geo Com
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[4] <- comps$h2GE
+#var_comp_pvalues$se[4] <- sqrt(comps$Varh2GE)
+#var_comp_pvalues$p.value[4] = p.value(varComp.test(fit, fit0))
+#
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[5] <- comps$h2G
+#var_comp_pvalues$se[5] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[5] = p.value(varComp.test(fit, fit0))
+#
+## Geo Env
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[6] <- comps$h2GE
+#var_comp_pvalues$se[6] <- sqrt(comps$Varh2GE)
+#var_comp_pvalues$p.value[6] = p.value(varComp.test(fit, fit0))
+#
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[7] <- comps$h2G
+#var_comp_pvalues$se[7] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[7] = p.value(varComp.test(fit, fit0))
+#
+## Com Env
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ env)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[8] <- comps$h2G
+#var_comp_pvalues$se[8] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[8] = p.value(varComp.test(fit, fit0))
+#
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ com)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[9] <- comps$h2GE
+#var_comp_pvalues$se[9] <- sqrt(comps$Varh2GE)
+#var_comp_pvalues$p.value[9] = p.value(varComp.test(fit, fit0))
+#
+## Geo Com Env
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + geo)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[10] <- comps$h2GE[2]
+#var_comp_pvalues$se[10] <- sqrt(comps$Varh2GE[2])
+#var_comp_pvalues$p.value[10] = p.value(varComp.test(fit, fit0))
+#
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ com + env)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[11] <- comps$h2GE[1]
+#var_comp_pvalues$se[11] <- sqrt(comps$Varh2GE[1])
+#var_comp_pvalues$p.value[11] = p.value(varComp.test(fit, fit0))
+#
+#fit0 <- varComp(Low_final_k ~ 1, random =  ~ geo + env)
+#fit <- varComp(Low_final_k ~ 1, random =  ~ com + geo + env)
+#comps <- varCompGE(fit)
+#var_comp_pvalues$varcomp[12] <- comps$h2G
+#var_comp_pvalues$se[12] <- sqrt(comps$Varh2G)
+#var_comp_pvalues$p.value[12] = p.value(varComp.test(fit, fit0))
+#
+#var_comp_pvalues$varcomp <- paste0(myround(var_comp_pvalues$varcomp, 2), ' (',
+#                                   myround(var_comp_pvalues$se, 2), ')')
+#
+#var_comp_pvalues$p.value <- 
+#  c(formatC(var_comp_pvalues$p.value[c(1)], format = "e", digits = 2), 
+#    myround(var_comp_pvalues$p.value[2:7], 3),
+#    formatC(var_comp_pvalues$p.value[c(8)], format = "e", digits = 2),
+#    myround(var_comp_pvalues$p.value[9:12], 3))
+#var_comp_pvalues[c(1, 2, 3, 7, 8), 5] <- 
+#  cell_spec(var_comp_pvalues[c(1, 2, 3, 7, 8), 5],  "latex", bold = T)
+##var_comp_pvalues[12, 5] <- 
+##  cell_spec(var_comp_pvalues[12,5],  "latex", italic = T)
+#var_comp_pvalues <- var_comp_pvalues[, -4]
+#
+#var_comp_pvalues %>% 
+#  kable('latex', booktabs = T, digits = 2, escape = F,
+#        caption = paste0('Variance component estimates from intercept-only models predicting the rate of high-affinity methane oxidation from soil. p-values
+#        determined by linear score test comparing nested models with and without
+#        each variance component. Significant p-values are bolded (p \\textless{} 0.05). 
+#        n = 44.'), 
+#        col.names = c('Model', 'Component', 'Estimate (SE)', 'p-value')) %>% 
+#  collapse_rows(columns = 1) %>% 
+#  writeLines('../tables/var_comp_pvalues.tex')
 
 #' # Analyze model output
 
 #+ r analyze_model_output
 all_model_output <- as.data.frame(data.table::fread('../talapas-output/var_comp_abund.csv'))
-#all_model_output <- as.data.frame(data.table::fread('../output/var_comp_fam.csv'))
 head(all_model_output)
+
 #' ## Variance components
 
 #+ r variance_components
@@ -635,7 +356,7 @@ all_model_output %>%
 #        digits = 2) %>% 
 #  kable_styling()
 
-#' ## Number of taxa identified with each covariate
+# Calculate q values for FDR
 
 for (i in unique(all_model_output$comps)) {
   print(i)
@@ -643,10 +364,12 @@ my_qs <- qvalue(all_model_output$p.value[all_model_output$comps == i])
 summary(my_qs)
 all_model_output$qvalues[all_model_output$comps == i] <- my_qs$qvalues
 }
+
 ggplot(all_model_output, aes(x = p.value)) +
   facet_wrap(~ comps) +
   geom_histogram()
 
+#' ## Number of taxa identified with each covariate
 #+ r n_taxa_ided
 taxon_table <- read.csv('../output/taxon_table.csv')
 n_taxa <- 

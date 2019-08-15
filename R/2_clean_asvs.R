@@ -1,8 +1,8 @@
 library(tidyverse)
-library(amorris)
+library(morris)
 
 # Import ASV table
-asv_table <- read_tsv('../data/gabon/16S_dada2_table_RDP_tax_edit.txt', n_max = 100000)
+asv_table <- read_tsv('../raw_data/16S_dada2_table_RDP_tax_edit.txt', n_max = 100000)
 
 # Pull out taxonomy
 taxon_table <- 
@@ -13,7 +13,7 @@ taxon_table <-
   separate(ConsensusLineage, c('Domain', 'Phylum', 'Class', 'Order', 'Family',
                                'Genus', 'Species'), ";") %>% 
   select(-Species)
-write_csv(taxon_table, '../output/gab_taxon_table.csv')
+write_csv(taxon_table, '../output/taxon_table.csv')
 
 # Rename ASVs to remove backticks in column names, add Sample ID column
 # Convert all abundances to doubles

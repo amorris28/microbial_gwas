@@ -18,7 +18,7 @@ scale of function.
 
 ## Data
 
-`data/` contains raw data as received from colleagues. This is never modified,
+`raw_data/` contains raw data as received from colleagues. This is never modified,
 but is under version control.
 
 `output/` is where modified data files are saved. These are not version
@@ -26,28 +26,37 @@ controlled and she be recreated from source.
 
 `talapas-output/` is where model output from the talapas HPC cluster.
 
+`Figures/` contains figures output from scripts
+
+`Tables/` contains tables output from scripts
+
+`R/` Contains scripts that run plus helper functions
+
 ## Scripts
 
 ### R
 `R/` directory contains `R` scripts that run.
 
-`clean_asvs.R` takes in the raw ASV table and munges it for analysis including
-performing the `varianceStabilizingTransformation` from `DESeq2`.
+`0_setup.R` has code to install all required packages.
 
-`clean_metadata.R` takes in the raw sample date file and munges it for analysis.
+`1_clean_sample_data.R` takes in the raw sample date file and munges it for analysis.
 
-`geodist_processing.R` takes in the raw GPS data and converts it to meters using
+`2_clean_asvs.R` takes in the raw ASV table and munges it for analysis including
+
+`3_geodist_processing.R` takes in the raw GPS data and converts it to meters using
 UTM.
 
-`combine_data.R` pulls in the asvs, sample data, and GPS data and combines them
+`4_var_stab_transform.R` performs the `varianceStabilizingTransformation` from `DESeq2`.
+
+`5_combine_data.R` pulls in the asvs, sample data, and GPS data and combines them
 into a single data structure.
 
-`var_comp.R` is the script that fits variance component models from the raw
-data. This is typically submitted to talapas and the output from talapas is
+`6_var_comp.R` is the script that fits variance component models from the raw
+data. This is typically submitted to the cluster and the output from the cluster is
 `scp`ed into `talapas-output/`.
 
-`analysis.R` is the primary file that presents the results and creates the
-figures and tables. This script can be rendered into `html` using `knitr::render`. 
+`7_analysis.R` is the primary file that presents the results and creates the
+figures and tables.
 
 `functions.R` contains holds the user-made functions specific to this project.
 

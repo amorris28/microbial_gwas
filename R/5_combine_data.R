@@ -3,17 +3,10 @@ library(morris)
 library(phyloseq)
 
 # Methanotrophy metadata
-troph_attr_table <- data.table::fread('../output/gab_troph_attr_table.csv', data.table = FALSE)
-troph_attr_table$Site <- paste0(troph_attr_table$Site, 
-				reverse_substr(troph_attr_table$Sample, 3, 3))
-# Methanogenesis metadata
-gen_attr_table <- data.table::fread('../output/gab_gen_attr_table.csv', data.table = FALSE)
-gen_attr_table$Site <- paste0(gen_attr_table$Site, 
-				reverse_substr(gen_attr_table$Sample, 3, 3))
-gen_attr_table$Wetland <- "Wetland"
+sample_data <- data.table::fread('../output/gab_troph_attr_table.csv', data.table = FALSE)
+sample_data$Site <- paste0(sample_data$Site, 
+				reverse_substr(sample_data$Sample, 3, 3))
 geodist <- read.table('../output/geodist.tsv', stringsAsFactors = FALSE)
-
-sample_data <- full_join(troph_attr_table, gen_attr_table)
 sample_data$Experiment <- reverse_substr(sample_data$Sample, 1, 2)
 sample_data <- left_join(sample_data, geodist, by = "Site")
 rownames(sample_data) <- sample_data$Sample

@@ -1,7 +1,7 @@
 library(DESeq2)
 library(tidyverse)
 
-asv_data <- read.delim('../data/gabon/16S_dada2_table_RDP_tax_edit.txt', header = TRUE)
+asv_data <- read.delim('../raw_data/16S_dada2_table_RDP_tax_edit.txt', header = TRUE)
 asv_mat <- as.matrix(asv_data[,-c(1, ncol(asv_data))])
 rownames(asv_mat) <- asv_data$OTU_ID
 # colnames(asv_mat) <- colnames(asv_data[, -1])

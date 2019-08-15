@@ -1,7 +1,7 @@
 library(sp)
 library(rgdal)
 
-geodist <- read.table('../data/gabon/Geodist_gabon_methane_samples_lat_long.txt')
+geodist <- read.table('../raw_data/Geodist_gabon_methane_samples_lat_long.txt')
 
 
 colnames(geodist) <- c('Site', 'X', 'Y')
@@ -17,4 +17,4 @@ geodist <- as.data.frame(res)
 (geodist$Y <- geodist$Y - min(geodist$Y))
  plot(geodist$X, geodist$Y)
 geodist$Site
-write.table(geodist, 'output/geodist.tsv')
+write.table(geodist, '../output/geodist.tsv')
