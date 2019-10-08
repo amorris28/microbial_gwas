@@ -471,20 +471,14 @@ analyses.
 # Tables and Figures
 
 ```{r copy_num}
-copy_number <- data.frame(Term = c('pmoA copy number', 'Richness'),
-                          Estimate = c(0.019, 0.001),
-                          SE = c(0.011, 0.001),
-                          t_statistic = c(1.700, 0.694),
-                          p_value = c(0.096, 0.491),
-                          n = c(42, 44))
-flextable(copy_number) %>% 
+model_out <- read.csv('../output/model_out.csv')
+flextable(model_out) %>% 
   compose(i = 1, j = 1, 
     value = as_paragraph(as_i("pmoA"), " copy number")) %>% 
   compose(part = "header", j = 4, 
     value = as_paragraph("t-statistic")) %>% 
   compose(part = "header", j = 5, 
     value = as_paragraph("p-value")) %>% 
-  colformat_int(col_keys = 'n', big.mark = ",")  %>% 
   autofit()
 ```
 
@@ -494,11 +488,8 @@ methane oxidation rate. Linear models predicting methane oxidation rate from
 measures of microbial community structure.
 
 ```{r mantel}
-mantel <- data.frame(Terms = c('Community ~ Environment', 'Community ~ Geography', 'Environment ~ Geography'),
-                     mantel = c(0.479, 0.360, 0.241),
-                     quantiles = c(0.096, 0.055, 0.060),
-                     p_value = c(0.001, 0.001, 0.001))
-flextable(mantel) %>% 
+mantel_table <- read.table('../output/mantel_table.tsv')
+flextable(mantel_table) %>% 
   compose(part = "header", j = 2, 
     value = as_paragraph("Mantel statistics (r)")) %>% 
   compose(part = "header", j = 3, 
@@ -513,15 +504,17 @@ distance matrix was based on Bray-Curtis distance while both environment and
 geography distance matrices were based on Euclidean distance. P-values
 determined by permutation test with 999 permutations.
 
-```{r n_taxa, eval=FALSE}
-mantel <- data.frame(Terms = c('None', 'Geo', 'Com', 'Env', 'Geo + Env', 'Geo + Env', 'Com + Env', 'Geo + Com + Env')
-flextable(mantel) %>% 
+```{r n_taxa}
+n_taxa <- read.table('../output/comp_adds_removes.tsv')
+flextable(n_taxa) %>% 
+  compose(part = "header", j = 1, 
+    value = as_paragraph("Terms")) %>% 
   compose(part = "header", j = 2, 
-    value = as_paragraph("Mantel statistics (r)")) %>% 
+    value = as_paragraph("Removed")) %>% 
   compose(part = "header", j = 3, 
-    value = as_paragraph("95% upper quantile of permutations")) %>% 
+    value = as_paragraph("Added")) %>% 
   compose(part = "header", j = 4, 
-    value = as_paragraph("p-value")) %>% 
+    value = as_paragraph("Significant")) %>% 
   autofit()
 ```
 
