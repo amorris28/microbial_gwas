@@ -27,6 +27,7 @@ library(gap)
 library(breakaway)
 library(ape)
 library(ggpubr)
+library(flextable)
 
 source('functions.R')
 
@@ -86,6 +87,24 @@ ggarrange(pmoa_plot, rich_plot,
 
 ggsave(file = '../figures/trad_cors.pdf', width = 4*2, height = 4)
 
+(pmoa_plot_arcs <- sample_data(physeq) %>% 
+  ggplot(aes(x = pmoa_copy_num, y = pos_lowk)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Abundance of methane consumers', y = expression('Methane oxidation rate (-k)')))
+
+(rich_plot_arcs <- sample_data(physeq) %>% 
+  ggplot(mapping = aes(x = rich_breakaway, y = pos_lowk)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Number of bacterial species', y = expression('Methane oxidation rate (-k)')))
+
+ggarrange(pmoa_plot_arcs, rich_plot_arcs,
+          labels = "AUTO",
+          ncol = 2, nrow = 1)
+
+ggsave(file = '../figures/trad_cors_arcs.pdf', width = 6, height = 3)
+
 # Table 1
 
 pmoa_fit <- lm(Low_final_k ~ pmoa_copy_num, data = as(sample_data(physeq), 'data.frame'))
@@ -96,7 +115,10 @@ rich_fit <- lm(Low_final_k ~ rich_breakaway, data = as(sample_data(physeq), 'dat
 summary(rich_fit)
 glance(rich_fit)
 
-rbind(tidy(pmoa_fit)[2, ], tidy(rich_fit)[2, ])
+model_out <- rbind(tidy(pmoa_fit)[2, ], tidy(rich_fit)[2, ])
+colnames(model_out) <- c('Term', 'Estimate', 'SE', 't-statistic', 'p-value')
+write.table(model_out, '../output/model_out.csv', sep = ",")
+
 
 # Pull out important axes an plot pairwise with axes proportional to var expl
 
@@ -181,6 +203,7 @@ ggarrange(W1, W2, W3,
           #align = 'v', 
           common.legend = TRUE))
 ggsave('../figures/pcoa_multi.pdf', width = 5*2, height = 4*3)
+ggsave('../figures/pcoa_multi_arcs.pdf', width = 10*3/4, height = 12*3/4)
 
 #' ## Collinearity
 
@@ -195,8 +218,8 @@ calc_sim_matrix <- function(x) {
 ## Community similarity
 com_sim <- 1 - as.matrix(vegdist(otu_table(physeq), method = "bray"))
 com_dis <- as.matrix(vegdist(otu_table(physeq), method = "bray"))
-com_sim_bin <- 1 - as.matrix(vegdist(otu_table(physeq), method = "jaccard", binary = TRUE))
-com_dis_bin <- as.matrix(vegdist(otu_table(physeq), method = "jaccard", binary = TRUE))
+#com_sim_bin <- 1 - as.matrix(vegdist(otu_table(physeq), method = "jaccard", binary = TRUE))
+#com_dis_bin <- as.matrix(vegdist(otu_table(physeq), method = "jaccard", binary = TRUE))
 
 # Geographic similarity
 geo_sim <- calc_sim_matrix(sample_data(physeq)[, c('X', 'Y')])
@@ -213,12 +236,15 @@ ggplot(mapping = aes(x = c(geo_dis), y = c(env_dis))) +
 
 # Table 2
 
-print(mantel(com_sim_bin, geo_sim))
-print(mantel(com_sim, geo_sim))
-print(mantel(com_sim_bin, env_sim))
-print(mantel(com_sim, env_sim))
-print(mantel(geo_sim, env_sim))
-
+(com_geo_mantel <- mantel(com_sim, geo_sim))
+(com_env_mantel <- mantel(com_sim, env_sim))
+(geo_env_mantel <- mantel(geo_sim, env_sim))
+mantel_table <- data.frame(Terms = c('Community ~ Geography', 'Community ~ Environment', 'Geography ~ Environment'),
+                           mantel = c(com_geo_mantel[[3]], com_env_mantel[[3]], geo_env_mantel[[3]]),
+                           quantile = c(0.0557, 0.1086, 0.0554),
+                           p.value = c(com_geo_mantel[[4]], com_env_mantel[[4]], geo_env_mantel[[4]]))
+write.table(mantel_table, '../output/mantel_table.tsv')
+print('no')
 #' # Variance Components
 
 ##+ r variance components
@@ -401,6 +427,13 @@ all_model_output %>%
   filter(qvalues < 0.05)  %>% 
   summarize(count = length(unique(asv)))
 
+n_taxa_pvalue <- 
+all_model_output %>% 
+  left_join(taxon_table) %>% 
+  group_by(comps) %>% 
+  filter(p.value < 0.05)  %>% 
+  summarize(count = length(unique(asv)))
+
 #' ## Taxa identified with each covariate
 
 #' ### All Data Model
@@ -542,6 +575,17 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
   scale_shape_manual(values = c(1, 2, 15))) 
 ggsave(file = '../figures/effect_sizes.pdf', width = 8, height = 4)
 
+(ggplot(effect_sizes, aes(y = asv, x = estimate, xmin = estimate - se,
+                         xmax = estimate + se, color = Phylum, shape = Phylum)) +
+  geom_point(size = 3) +
+  geom_errorbarh(height = 1/4) +
+  geom_vline(xintercept = 0) +
+  labs(x = 'Increase in methane oxidation per increase in abundance', y = 'Microbes correlated with methane oxidation') +
+  scale_y_discrete(labels = mylabels)+
+  scale_colour_manual(values=cbPalette) +
+  theme(axis.title.y = element_blank()) +
+  scale_shape_manual(values = c(1, 2, 15))) 
+ggsave(file = '../figures/effect_sizes_arcs.pdf', width = 6, height = 3)
 
 # Table 3
 
@@ -558,7 +602,7 @@ gce_ <- pull(sig_taxa_all[sig_taxa_all$comps == 'gce', ], asv)
 
 comp_adds_removes <- 
 data.frame(
-           comps = c('none', 'geo', 'com', 'env', 'geo + com', 'geo + env', 'com + env', 'geo + com + env'), 
+           comps = c('None', 'Geo', 'Com', 'Env', 'Geo + Com', 'Geo + Env', 'Com + Env', 'Geo + Com + Env'), 
            removed = c(0, sum(!n_ %in% g_), sum(!n_ %in% c_), sum(!n_ %in% e_), 
                        sum(!n_ %in% gc_), sum(!n_ %in% ge_), sum(!n_ %in% ce_), 
                        sum(!n_ %in% gce_)),
@@ -567,7 +611,7 @@ data.frame(
                        sum(!gce_ %in% n_)),
            n_sig = c(length(n_), length(g_), length(c_), length(e_), length(gc_),
                      length(ge_), length(ce_), length(gce_)))
-
+write.table(comp_adds_removes, '../output/comp_adds_removes.tsv')
 #comp_adds_removes %>% 
 #  kable('latex', booktabs = TRUE, 
 #        caption = paste0("Number of taxa correlated with high-affinity

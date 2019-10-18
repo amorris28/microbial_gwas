@@ -13,7 +13,7 @@
 *.snm
 *.toc
 output/
-Figures/
+figures/
 *.RData
 *.Rhistory
 .deps
@@ -29,3 +29,6 @@ manuscript/240719Royal_Society_Paper_BJMB.docx
 supplement/
 supplement.zip
 poster/
+*.eps
+*.svg
+*.odg
