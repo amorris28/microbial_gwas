@@ -16,788 +16,482 @@ opts_chunk$set(echo = FALSE)
 
 ```
 
-# To Do
-
- - [ ] Soften the language surrounding what progress we have made in microbial
-   BEF - currently it is too harsh. Reference some of the newer
-   multi-functionality literature.
- - [ ] Add an explanation of what figure two represents.
- - [ ] Reframe the paper about how there is ample evidence that underground
-   biodiversity might play a role in ecosystem functioning. Add the caveat that
-   current approaches to incorporating microbes into earth system models don't
-   provide much increased variance explained. Use this to pitch an alternative
-   approach: learning from geno-pheno mapping to angostically search for taxa
-   that may regulate function upstream of the actual process being studied.
-
 # Abstract
 
-Microorganisms mediate many important ecosystem functions, yet it remains
-unclear to what extent microbial diversity or community composition is
-important for determining the rates of ecosystem-scale functions. This
-uncertainty limits our ability to predict and manage crucial microbially
-mediated processes, such as nutrient loss and greenhouse gas emissions. Our
-lack of understanding stems from the relatively large diversity of
-microorganisms, the difficulty in directly identifying functional groups, and
-our limited ability to manipulate microbial community attributes. For this
-reason, we propose that integrating traditional biodiversity-ecosystem function
-research with ideas from genotype-phenotype mapping could provide the new
-perspective our discipline needs. We identify two insights from
-genotype-phenotype mapping that could be useful for microbial
-biodiversity-ecosystem function studies: the concept of “agnostic” mapping and
-the incorporation of covariates into models of ecosystem function to identify
+Microbial physiological processes are intimately involved in nutrient cycling.
+However, it remains unclear to what extent microbial diversity or community
+composition is important for determining the rates of ecosystem-scale
+functions. There are numerous examples where microbial diversity is correlated
+with the rate of an ecosystem function, but exactly how microbial communities
+“map” onto ecosystem functions remains unresolved.  This uncertainty limits our
+ability to predict and manage crucial microbially mediated processes such as
+nutrient loss and greenhouse gas emissions. Our lack of understanding stems
+from the relatively large diversity of microorganisms, the difficulty in
+directly identifying functional groups, and our limited ability to manipulate
+microbial community attributes. For this reason, we propose that integrating
+traditional biodiversity-ecosystem function research with ideas from
+genotype-phenotype mapping could provide the new perspective our discipline
+needs. We identify two insights from genotype-phenotype mapping that could be
+useful for microbial biodiversity-ecosystem function studies: the concept of
+“agnostic” mapping and controlling for population stratification to identify
 microorganisms that uniquely contribute to ecosystem function. We illustrate
 the potential for these approaches to elucidate microbial
 biodiversity-ecosystem function relationships by analyzing a subset of
-published data measuring methane oxidation rates from incubations of tropical
-soil. We assert that combining the approaches of traditional
-biodiversity-ecosystem function research with ideas from genotype-phenotype
-mapping will not only generate novel hypotheses about how complex microbial
-communities drive ecosystem function, but also help scientists predict and
-manage changes to ecosystem functions resulting from human activities.
+published data measuring methane oxidation rates from tropical soils. We assert
+that combining the approaches of traditional biodiversity-ecosystem function
+research with ideas from genotype-phenotype mapping will not only generate
+novel hypotheses about how complex microbial communities drive ecosystem
+function, but also help scientists predict and manage changes to ecosystem
+functions resulting from human activities.
 
 ## Introduction 
 
-Ecology is broadly focused on understanding what creates the biodiversity we
-observe and how that biodiversity shapes the ecosystems that humans depend
-on. Earth's microbiome represents an important microcosm for that general
-pursuit as most of the major biogeochemical cycles are mediated by
-microorganisms. We have shown that certain ecosystem functions are positively
-correlated with microbial biodiversity. However, attempts to understand the
-mechanism underlying that relationship have borne little fruit. We argue that
-to overcome this challenge we should look for inspiration from population
-genetics and the process of genotype-phenotype mapping. In particular, we should look
-more agnostically at microbial
-communities to identify taxa that regulate ecosystem-scale functions. In
-addition, we should attempt to understand the complex covariance that exists
-between microbial communities, biogeographic patterns, and the underlying abiotic
-environment. Finally, we reframe the question "Is microbial biodiversity
-related to ecosystem function?" as "What is the unique contribution of the
-microbiome to ecosystem function independent of the environment?"
+Ecology is broadly focused on understanding biodiversity and how that
+biodiversity shapes the ecosystems that humans depend on. Many ecosystem
+processes essential to all of life are mediated by microorganisms and therefore
+understanding the relationship between microbial biodiversity and ecosystem
+function is important [@schimel1998, @singh2010]. Certain ecosystem functions
+are correlated with microbial diversity, indicating that we should be able to
+determine what aspects of microbial biodiversity influence ecosystem function.
+However, attempts to describe that mapping have borne little fruit [@rocca2015,
+@graham2016]. We argue that to overcome this challenge we should look to other
+successful attempts at mapping biological variation onto higher order
+processes. In particular, population genetics and the process of
+genotype-phenotype mapping provide a number of potentially useful insights. For
+example, genotype-phenotype mapping often makes few assumptions about the
+nature of the map, i.e., it is “agnostic.” In addition, population geneticists
+have developed rigorous methods for reducing potentially confounding
+relationships such as geographic structuring of populations. Finally, the
+ultimate goal of genotype-phenotype mapping is to identify the unique
+contribution of genotype to phenotype separate from other drivers of phenotypic
+variation such as the environment. Inspired by this, we suggest a reframe of
+the question, "is microbial biodiversity related to ecosystem function?" to, "what
+is the unique contribution of the microbiome to ecosystem function independent
+of the environment?"
 
-### There is evidence that microbial diversity matters
+### There is evidence that microbial biodiversity matters for ecosystem function
 
-There is evidence that microbial communities should matter for regulating
-ecosystem function. Some studies have manipulated the connection between
-environmental factors and microbial community composition through common garden
-or reciprocal transplant experiments. These studies frequently report different
-rates of ecosystem functions for different microbial communities under the same
-environmental conditions [@reed2007]. This has been observed for plant
-decomposition [@glassman2018, @strickland2009], plant phenology
-[@panke-buisse2015], soil nitrogen cycling [@balser2005], and soil greenhouse
-gas emissions [@cavigelli2000], among other functions. Therefore, variation in microbial
-community composition can be associated with variation in ecosystem function.
+There is increasing evidence for microbial biodiversity-ecosystem function
+relationships. For example, there are positive correlations between microbial
+diversity and ecosystem multifunctionality for a variety of ecosystems and most
+major lineages of microorganisms [@jing2015, @delgado-baquerizo2016,
+@delgado-baquerizo2017]. Adding microbial diversity or abundance to ecosystem
+models can in some cases improve model accuracy [@graham2016]. Contrived
+communities that vary in richness and communities created through sequential
+dilution or varying filter size to generate differences in diversity can also
+exhibit differences in ecosystem function [@philippot2013, @wagg2014, @schnyder2018,
+@maron2018].  Finally, reciprocal transplant and common garden experiments that
+manipulate the connection between community composition and environment reveal
+differences in ecosystem function for communities of distinct
+origins [@cavigelli2000, @strickland2009, @glassman2018]. Given these
+relationships, many investigators have now moved on to the challenge of
+identifying the aspects of microbial biodiversity (e.g., specific taxa, genes,
+functional groups, etc.) that influence a given ecosystem function; however,
+this has proven especially challenging.
 
-Studies using a comparative approach rather than a manipulative one have also
-demonstrated a link between microbial biodiversity and ecosystem function.  In
-general, there is a significant correlation between belowground biodiversity
-and multiple ecosystem functions [@jing2015, @delgado-baquerizo2016,
-@delgado-baquerizo2017, @wagg2014]. It is unclear whether the positive
-diversity-function relationship is due to the independent effect of variation
-in community composition on ecosystem function or due to environmental
-conditions that select for both diverse communities and high rates of ecosystem
-function. Determining why we see this diversity-function relationship depends
-on identifying the components of the community that are related to ecosystem
-function.
+### The mapping between microbial biodiversity and ecosystem function has been elusive
 
-### We need a new perspective on microbial biodiversity-ecosystem function relationships
-
-Most sudies of microbial community function focus on either functional gene
-abundance or community diversity.
-In the case of functional genes, qPCR or shotgun metagenomic sequencing is used to
-estimate the abundance of a gene or transcript that is a putative marker for a
-microbial process (and thus a marker for the functional group that performs
-that process). For example, the gene _mcrA_, which encodes a subunit of the
-enzyme that performs the final step in methanogenesis, is commonly used as a
-marker for methanogenesis and for the methanogen functional group. Other
-examples include _pmoA_ for methanotrophy, _nifH_ for nitrification, and _nosZ_ for
-denitrification. The abundance of these markers is often hypothesized to
-predict the rate of their associated processes (for example, the
-abundance of _mcrA_ is expected to relate to the rate of
-methanogenesis). There are examples where this relationship is present
-[@freitag2009, @freitag2010, @schnyder2018].  However, a review of such studies
-found that the abundance of a functional gene or transcript is rarely
-correlated with the rate of the corresponding process and depends on the
-function of interest, with most effects either negative or not significant
-[@rocca2015].
-
-The second aspect of microbial community structure hypothesized to predict
-ecosystem function is taxonomic or functional diversity. Diversity is either
-estimated from sequence variants of a barcode gene such as the 16S rRNA gene or
-manipulated through some proxy of diversity such as sequential dilution or
-varying filter sizes. Studies that experimentally manipulate diversity
-generally find a relationship between the applied diversity treatment and
-ecosystem function, including methanotrophy [@schnyder2018], phosphorus
-leaching [@wagg2014], greenhouse gas emissions [@wagg2014], decomposition
-[@maron2018], and nitrogen cycling [@philippot2013]. However, in many cases
-richness is confounded with other factors such as the presence or absence of
-major phylogenetic groups (nematodes, fungi) or abundance of microbial cells.
-In addition, assembled microbial communities risk confounding diversity with
-composition, for example by more likely including the most productive taxa in
-the highest diversity treatment. In general, the relationship between microbial
-diversity is positive and significant, but adds little variance over abiotic
-conditions or macroorganismal diversity [@graham2016, @jing2015].
-
-Despite the positive diversity-function relationship for microbes, models that
-incorporate microbial features only marginally improve predictions over
-environmental variables [@graham2016]. In addition, we've made little progress
-in identifyng the components of microbial communities that drive these
-diversity-function relationships [@rocca2015].
-Overall, functional gene abundance and community diversity improve models of
-ecosystem function less than one third of the time and increase variance
-explained by an average of only 8 percentage points [@graham2016].
-
-Up to this point, microbial biodiversity-ecosystem function research has
-followed a similar path to macrobial biodiversity-ecosystem function research,
-particularly compared to plant communities. However, there are important
-differences between plants and microbes that might inform how we pursue this
-research going forward. For example, microbial communities are more diverse and
-contain greater numbers of individuals than plant communities and are thus more
-difficult to sample comprehensively. Unlike plants, functional groups of
-microbes are rarely determined through observation or direct measurement, but
-rather must be indirectly inferred based on taxonomic assignment of marker
-genes (such as 16S rRNA genes), by sequencing functional genes from
-metagenomes, or by quantifying specific functional genes using qPCR.  This adds
-uncertainty in our ability to estimate the size of functional groups.  The
-ability to experimentally manipulate diversity or community composition is much
-more limited for microbes. Given all of these differences (and many others),
-the challenge of linking microbial communities to ecosystem functions may be
-less like that of plant communities and more analogous to the complex task of
-linking genomic variation to organismal phenotypes. For this reason, we propose
-that integrating traditional biodiversity-ecosystem function research with
-ideas from genotype-phenotype mapping could provide the new perspective our
-discipline needs.   
-
-### Genotype-phenotype as a source of inspiration
-
-Given the relative lack of success to date, it is time to rethink how we
-approach the challenge of mapping microbial community structure to ecosystem
-function. Microbial ecologists are not the only biologists who are attempting
-to determine the relationship between a complex set of highly-variable data and
-an aggregate function. This kind of “many-to-one” mapping is analogous to the
-challenge of identifying the genetic basis of complex traits in organismal
-populations. In such genotype-phenotype mapping studies, a population
-exhibits variation in a phenotype (e.g., height or disease state) as well as
-variation in thousands of genetic loci or single nucleotide polymorphisms (SNPs).
-To identify the genetic basis for a trait, investigators sample from this
-population and correlate phenotype with genotype. In most cases, there are many
-more loci than individuals and we do not know whether the SNPs are causally
-linked or are simply in linkage disequilibrium with a causal mutation.
-
-There are a number of parallels between the challenge faced by organismal
-biologists and that facing microbial community ecologists. They are both
-“many-to-one” mapping challenges which involve large numbers of statistical
-comparisons. Both are attempting to identify causal relationships that are
-potentially confounded by complex patterns of covariation. For example,
-with local selection or distance-decay. Further, a positive association may
-either indicate a causal relationship or simply an association between a
-significant taxon and a causal taxon (i.e., microbial linkage
-disequilibrium). There is often no strong expectation about which entities
-(i.e., which genomic regions or which microbial taxa) are most likely to be
-causally-related to phenotype or function, and thus “agnostic” approaches are
-needed.  Both are sensitive to exactly how the “mapping” question is asked, and
-both ultimately require manipulation (of genes or taxa) to establish causation. We
-describe each of these parallels below in more detail and provide an example
-of how these ideas could be applied to microbial data.
-
-### The importance of a taxonomically “agnostic” approach 
-
-[This is super redundant with the previous section.] 
-
-The traditional approach to macroorganismal biodiversity-ecosystem function
-research is to measure or manipulate the diversity of a taxonomic group (e.g.,
-plants) and look for an association with the function performed by that group
-(e.g., primary productivity). In the broadest sense, we can think of plants as
-a “functional group,” i.e., a group of taxa united by their ability to perform
-a particular ecosystem function. Ecologists may further divide a functional
-group (e.g., plants) into smaller functional groupings (e.g., forbs), defined
-by the details of how they perform their particular ecosystem function. 
-
-However, for microbes our knowledge of functional groups is much more limited.
-From a very limited number of cultured isolates we have a provisional
-understanding of which microbes might be involved in some ecosystem functions.
-And by sequencing the genomes of these isolates, we have identified genetic
-markers for certain functions. But most microbial taxa remain uncultured and we
-do not know the function of most microbial taxa detected in environmental
-samples [@hug2016, @martiny2019, @steen2019]. In addition, there have been
-recent discoveries of functions in unexpected taxonomic groups, for example
-methanogenesis by fungi and cyanobacteria, a function previously considered
-restricted to the Archaea [@bizic-ionescu2019, @lenhart2012]. Therefore,
-estimating microbial functional group abundance can be challenging.
-
-Beyond, for example, identifying previously undocumented methanotrophs that are
-related to methane oxidation, it's possible that more complex ecological
-regulatory patterns exist in microbial communities. In other words, it may
-be that methanotroph abundance does not limit methanotrophy in a given ecosystem.
-[Something about metabolic networks...]
-Instead, the rate
-of methane flux to the atmosphere could be controlled by methanotrophs,
-methanogens, bacteria that produce the fermentative byproducts that methanogens
-depend on, nutrient cyclers that regulate the availability of nitrogen or
-phosporus, or even grazers and other predators or pathogens. In other words, the regulation of
-ecosystem function by microbial communities could be direct or indirect, much
-like genetic regulation within an organism.
-
-Because of this, it would be prudent to look more agnostically at microbial
-communities to identify taxa or groups of taxa that are important for
-predicting the rate of ecosystem functions rather than assuming that the
-genetic markers we have provisionally identified for a given function represent
-the most likely taxa involved. This agnostic approach is analogous to the
-approach of many genotype-phenotype mapping studies (e.g., genome-wide
-association studies or GWAS), which often look for associations between a
-phenotype and loci anywhere in a genome.
-
-### Controlling for population stratification
-
-It is widely accepted that organisms, including microorganisms, exhibit
-population stratification due to geographic and environmental separation
-[@martiny2006, @wright1943]. Genome-wide association studies generally control
-for population stratification using shared ancestry among cases and controls when
-modeling the connection between genotype and phenotype. The classic example is
-the latitudinal gradient of both height and genotypic similarity in Europe,
-which results in spurious associations between human height and genetic
-variation [@berg2019, @novembre2008, @sohail2019]. Perhaps a more illustrative
-example is the correlation between chopstick usage and certain genetic markers
-in Asian populations, which is unlikely to be due to an actual genetic basis
-for chopstick skills. Spurious associations arise
-because of heterogeneity in population structure where any genetic variant in a
-population with an extreme phenotype will tend to be associated with that
-phenotype whether it is related or not. 
-
-Genome-wide association studies correct for stratification using a variety of methods.
-Generally, they ignore the underlying environmental and spatial
-distance between samples and instead use shared ancestry as a proxy for local
-selection and assortative mating.  A common approach is to perform a regression
-of phenotype and shared ancestry (computed as the first one or more principal
-components of the genotype matrix) and then use the residuals from this model
-as the values for phenotype in a
-subsequent regression using the genotypes directly [@price2006]. This principal
-component analysis is designed to test the effect of individual genes after
-removing shared ancestry among individuals. Another approach, employed in our
-example, is variance component modeling (or mixed modeling, heirarchical
-modeling, etc.) where genotypic similarity is included as a covariate in the
-model [@kang2010]. 
-
-While these represent two common statistical approaches to
-control for population stratification, it is also considered good practice to
-control for stratification experimentally. This can be accomplished by 
-selectng a study population that is relatively homogeneous. Otherwise, even
-large, well-replicated GWAS studies can result in
-false positives. For example, it was recently revealed that GWAS studies on
-height of Europeans failed to adequately control for stratification. When their
-results were confirmed using a similarly sized, but more homogeneous study
-population, many of the genetic markers for height were no longer significant [@berg2019,
-@sohail2019]. 
-
-[This paragraph needs work]
-
-Typically, microbial biodiversity-ecosystem function studies do not account for
-population stratification (i.e., community similarity across samples), although
-there are some exceptions [@meyer2019, @qin2012, @lloyd-price2019].  However,
-community similarity (the community analogue of shared ancestry among
-organisms) is not as tightly linked to geography or environment as is shared
-ancestry among organisms, and it could be very useful to account for these
-separately in microbial studies, especially if one is particularly interested
-in how composition alters function independent of the underlying environmental
-variation. 
-
-### What might this look like/More about the analogy
-
-The relationship between structure and function could be complex and indirect.
-i.e. not just methanogens making methane, but metabolic and regulatory networks
-
-A significant correlation between a taxon and a function could mean a number of
-things.
-1. That microbe is performing that function right now and its abundance is
-   related to function
-2. 
-
-
-This whole compositional data/relative abundance thing also seems problematic
-for correlating abundance with function. Really what we're saying is "this read is differentially abundant in low vs. high flux ecosystems." Not abundance is _correlated_ with flux.
-1. It's not **abundance**.
-2. An increase in relative abundance in one taxon implies nothing about the
-   abundance of that taxon 
-
-   wootincrease in relative abundance in one taxon implies nothing about the
-abun
-3. It is perhaps somewhat more likely that 
-
-
-
-
-### We need a new perspective on microbial community-ecosystem function relationships
-
-Many of the topics in this first section are covered later (e.g. in diversity
-matters). What is the purpose of this section - how does it move the story
-along? It should motivate this work and put it in a larger context. This is the
-hook. Maybe the best way to do this is introduce what we know, then create a
-conflict by showing what we don't know, and then give a brief read map of how
-we're going to fix that. Possibly send these 2-3 paragraphs to Bebo. Maybe also
-read some writing advice on hooks (maybe in Schimel's book).
-
-Ecologists have long investigated the effects of changing biodiversity on
-ecosystem function, documenting, for example, relationships between terrestrial
-plant community richness and primary productivity [@hooper2005]. The study of
-the relationship between microbial biodiversity and ecosystem functions is much
-more recent and has generated mixed results [@schimel1998, @singh2010]. Despite
-the fact that microbes mediate many important ecosystem functions, it remains
-maddeningly unclear to what extent microbial diversity or community composition
-is important for determining the rates of ecosystem-scale functions.  For
-example, numerous studies have attempted to correlate microbial functional
-group abundance or diversity with the rate of various ecosystem functions and
-most are unsuccessful [@rocca2015, @graham2016]. This uncertainty limits our
-ability to predict and manage crucial microbially mediated ecosystem functions,
-such as nutrient loss and greenhouse gas emissions. As a discipline, we need a
-new perspective on these questions.
-
-Numerous studies have attempted to link microbial diversity or functional group
-abundance  to ecosystem function. In general, there is a significant correlation between
-belowground biodiversity and multiple ecosystem functions [@jing2015,
-@delgado-baquerizo2016, @delgado-baquerizo2017, @wagg2014]. However, models that incorporate microbial features
-only marginally improve predictions overall environmental variables [@graham2016]. In addition, we've made
-little progress in identifyng the components of microbial communities that
-drive these diversity-function relationships [@rocca2015]. It is unclear
-whether the positive diversity-function relationship is due to the independent
-effect of variation in community composition on ecosystem function or due to
-environmental conditions that select for both diverse communities and high
-rates of ecosystem function. Determining why we see this diversity-function
-relationship depends on identifying the components of the community that are
-related to ecosystem function independent of the environmental variation.
-
-I don't love the below paragraph
-
-Our lack of understanding stems from many sources. Microbial communities are
-more diverse and contain greater numbers of individuals than plant communities
-and are thus more
-difficult to sample comprehensively. Unlike plants, functional groups of
-microbes are rarely determined through observation or direct measurement, but
-rather must be indirectly inferred based on taxonomic assignment of marker
-genes (such as 16S rRNA genes), by sequencing functional genes
-from metagenomes, or by quantifying specific functional genes using qPCR. This adds uncertainty in our ability to estimate the size of functional groups.
-The ability to experimentally manipulate microbial diversity or community
-composition is much more limited for microbes. Given all of these differences
-(and many others), the challenge of linking microbial communities to ecosystem
-functions may be less like that of plant communities, and more analogous to the
-complex task of linking genomic variation to organismal phenotypes. For this
-reason, we propose that integrating traditional biodiversity-ecosystem function
-research with ideas from genotype-phenotype mapping could provide the new
-perspective our discipline needs.   
-
-### There is evidence that microbial diversity matters
-
-Perhaps remove this paragraph. Maybe add an explanation of "independent of the
-environment" slash "uniquely attributed"
-
-Perhaps our uncertainty arises because there is no general relationship between
-microbial biodiversity and any particular ecosystem function. For example, if
-local selection always optimizes the available microbial biodiversity to
-maximize ecosystem function, then microbial community composition should not
-matter for predicting the rates of microbially mediated functions. Instead, the
-rates of these functions should be determined by the underlying environmental
-variation. In this case, the microbial community would simply act as a conduit
-through which the abiotic environment alters ecosystem function. Attempts to
-document a general relationship between microbial community attributes and
-function would then fail (since the primary drivers are environmental).
-
-However, there is evidence that this is not always the case [super awkward]. Some studies have
-manipulated the connection between environmental factors and
-microbial community composition through “common garden” or reciprocal
-transplant experiments, and they frequently report different rates of ecosystem
-functions for different microbial communities under the same environmental
-conditions [@reed2007].  This has been observed for plant decomposition
-[@glassman2018, @strickland2009], plant phenology [@panke-buisse2015], soil
-nitrogen cycling [@balser2005], and soil greenhouse gas emissions
-[@cavigelli2000], among others. Therefore, variation in microbial community
-composition can be associated with variation in ecosystem function, independent
-of environmental variation. So why has this been difficult to consistently
-document in the field?  
-
-### Traditional approaches to quantifying this relationship have provided only minor improvements
-
-Most comparative studies of microbial community function in the field focus on
-one of two aspects of microbial community structure that are hypothesized to
-predict ecosystem function. The first aspect is “functional” gene or transcript
-abundance.  In this case, qPCR or shotgun metagenomic sequencing is used to
-estimate the abundance of a gene or transcript that is a putative marker for a
-microbial process (and thus a marker for the functional group that performs
-this process). For example, the gene mcrA, which encodes a subunit of the
-enzyme that performs the final step in methanogenesis, is commonly used as a
-marker for methanogenesis and for the methanogen functional group. Other
-examples include pmoA and methanotrophy, nifH and nitrification, and nosZ and
+Most studies that attempt to identify the aspects of microbial biodiversity
+that influence a given ecosystem function focus on “functional” gene or
+transcript abundance.  In this case, qPCR or shotgun metagenomic sequencing is
+used to estimate the abundance of a gene or transcript that is a putative
+marker for a microbial process (and thus a marker for the functional group that
+performs this process). For example, the gene _mcrA_, which encodes a subunit of
+the enzyme that performs the final step in methanogenesis, is commonly used as
+a marker for methanogenesis and for the methanogen functional group. Other
+examples include _pmoA_ and methanotrophy, _nifH_ and nitrification, and _nosZ_ and
 denitrification. The abundance of these markers is often hypothesized to be
 predictive of the rate of their associated processes (for example, the
-abundance of mcrA is often hypothesized to be related to the rate of
-methanogenesis). There are examples where this relationship is present
-[@freitag2009, @freitag2010, @schnyder2018].  However, a review of such studies
-found that the abundance of a functional gene or transcript is rarely
-correlated with the rate of the corresponding process and depends on the
-function of interest, with most effects either negative or not significant
-[@rocca2015].
+abundance of _mcrA_ is often hypothesized to be related to the rate of
+methanogenesis). 
 
-The second aspect of microbial community structure hypothesized to predict
-ecosystem function is taxonomic or functional diversity. Diversity is either
-estimated from sequence variants of a barcode gene such as the 16S rRNA gene or
-manipulated through some proxy of diversity such as sequential dilution or
-varying filter sizes. Studies that experimentally manipulate diversity
-generally find a relationship between the applied diversity treatment and
-ecosystem functions, including for methanotrophy [@schnyder2018], phosphorus
-leaching [@wagg2014], greenhouse gas emissions [@wagg2014], decomposition
-[@maron2018], and nitrogen cycling [@philippot2013]. However, in many cases,
-richness is confounded with other factors such as the presence or absence of
-major phylogenetic groups (nematodes, fungi) or abundance of microbial cells.
-In addition, assembled microbial communities pose the same challenges as
-macroorganismal diversity experiments, for example the highest diversity
-treatment will more likely contain the most productive taxon. A review of
-microbial diversity studies shows that microbial community taxonomic and
-functional diversity add little explanatory power to models of ecosystem
-function [@graham2016]. Overall, functional gene abundance and community
-diversity improve models of ecosystem function less than one third of the time
-and increase variance explained by an average of only 8 percentage points
-[@graham2016].
+Some ecosystem functions in certain ecosystems can be predicted from the
+abundance or transcriptional activity of genetic markers for those functions.
+For example, soil methane production and consumption can under some
+circumstances be predicted from the genetic markers _mcrA_ and _pmoA_
+[@freitag2009, @freitag2010, @mccalley2014]. However, for most ecosystem
+functions the abundance of a functional gene or transcript is rarely positively
+correlated with the rate of the corresponding process [@rocca2015]. The
+cases where there is a positive correlation tend to be restricted to
+agricultural ecosystems and for certain functions within the nitrogen cycle
+[@rocca2015]. In general, including aspects of microbial biodiversity
+(e.g., functional gene abundance or diversity) improve models of ecosystem
+function less than one third of the time, and increase variance explained by an
+average of only 8 percentage points over environmental variables [@graham2016]. 
 
-### Genotype-phenotype mapping as a source of inspiration
+## Genotype-phenotype mapping as a source of inspiration
 
-Given the relative lack of success to date, it is time to rethink how we
-approach the challenge of mapping microbial community structure to ecosystem
-function.  Microbial ecologists are not the only biologists who are attempting
-to determine the relationship between a complex set of highly-variable data and
-an aggregate function.  This kind of “many-to-one” mapping is analogous to the
-challenge of identifying the genetic basis of complex traits in organismal
-populations. In such “genotype-phenotype” mapping studies, a population
-exhibits variation in a phenotype (e.g., height or disease state) as well as
-variation in potentially thousands of single nucleotide polymorphisms (SNPs).
-To identify the genetic basis for a trait, investigators sample from this
-population and correlate phenotype with genotype. In most cases, there are many
-more loci than individuals and we do not know whether the SNPs are causally
-linked or are simply in linkage disequilibrium with a causal mutation.
+In the approaches described above, microbial ecologists often use microbiome
+data to infer taxonomic composition, essentially creating species lists from
+data such as 16S rRNA marker genes or shotgun metagenomes. Interpreting
+microbiome data in this way has allowed us to use approaches from
+biodiversity-ecosystem function research (which are often focused on taxonomic
+or functional groups), but it has generally not been useful for creating more
+detailed descriptions of the relationship between microbial biodiversity and
+ecosystem function. But this approach is not the only way one could determine
+the relationship between a complex set of highly-variable data and an aggregate
+function. 
+
+This kind of “many-to-one” mapping is analogous to the challenge of identifying
+the genetic basis of complex traits in organismal populations. In such
+“genotype-phenotype” mapping studies, a population exhibits variation in a
+phenotype (e.g., height or disease state) as well as variation in potentially
+thousands of single nucleotide polymorphisms (SNPs). To identify the genetic
+basis for a trait, investigators sample from this population and correlate
+phenotype with genotype. While some phenotypes (e.g., the propensity for
+diseases such as Parkinson’s) are controlled by a single genetic locus
+[@kerem1989, @macdonald1992], most traits depend on a large number of genes
+that control variation in that phenotype [@hindorff2009, reich2001]. In
+addition, there is often no a priori expectation about which regions of the
+genome control that trait so we must search for genetic markers
+throughout the genome. If a marker is significantly correlated with the
+phenotype of interest, this either indicates it is inside of a gene with a
+direct or indirect effect on phenotype or that it is in linkage disequilibrium
+(i.e., non-random association between two alleles) with a causal gene. 
 
 There are a number of parallels between this challenge faced by organismal
-biologists and that facing microbial community ecologists.  They are both
-“many-to-one” mapping challenges, which involve large numbers of statistical
-comparisons.  Both are attempting to identify causal relationships that are
-potentially confounded by very complex patterns of covariation.  There is often
-no strong expectation about which entities (i.e., which genomic regions or which
-microbial taxa) are most likely to be causally-related to phenotype or
-function, and thus “agnostic” approaches are needed.  Both are sensitive to
-exactly how the “mapping” question is asked, and ultimately require
-manipulation (of genes or taxa) to establish causation.  We describe each of
-these parallels below in more detail, and provide an example of how these ideas
-could be applied to microbial data.
+biologists and that facing microbial community ecologists. They both involve
+large numbers of statistical comparisons. Both are attempting to identify
+causal relationships that are potentially confounded by complex patterns of
+covariation. There is often no strong expectations about which entities (i.e.,
+which genomic regions or which microbial genes or lineages) are most likely to
+be causally-related to phenotype or function, and thus “agnostic” approaches
+are needed. For some ecosystem functions, it is possible that a single
+microbial taxon could substantially influence its rate. For example, methane
+flux from permafrost in Sweden may be controlled by a single taxon [@mccalley2014]. But
+for most ecosystem functions, there could be many taxa of small effect that
+contribute to the rate of ecosystem function. Finally, both ultimately require
+manipulation (of genes or taxa) to establish causation. 
 
-### The importance of a taxonomically “agnostic” approach 
+### The importance of a taxonomically “agnostic” approach
 
-The traditional approach to microorganismal biodiversity-ecosystem function
-research is to measure or manipulate the diversity of a taxonomic group (e.g.,
-plants) and look for an association with the function performed by that group
-(e.g., primary productivity).  In the broadest sense, we can think of plants as
-a “functional group,” i.e., a group of taxa united by their ability to perform
-a particular ecosystem function. Ecologists may further divide a functional
-group (e.g., plants) into smaller functional groupings (e.g., forbs), defined
-by the details of how they perform their particular ecosystem function. 
+Most microbial biodiversity-ecosystem function research up to this point has
+used an approach analogous to that used by plant ecologists studying
+biodiversity-ecosystem function relationships. This approach is to measure or
+manipulate the diversity of a taxonomic group (e.g., plants) and look for an
+association with the function performed by that group (e.g., primary
+productivity). We can think of plants as a “functional group,” i.e., a group of
+taxa united by their ability to perform a particular ecosystem function. For
+microbes, estimating functional group abundance can be much more challenging.
+From a small number of cultured isolates, we have a provisional understanding
+of which microbes might be involved in some ecosystem functions. By sequencing
+the genomes of these isolates, we have identified genetic markers for certain
+functions, which we call “functional genes.” But most microbial taxa remain
+uncultured and we do not know the function of most microbial taxa detected in
+environmental samples [@hug2016, @martiny2019]. In addition, there have
+been recent discoveries of functions in unexpected taxonomic groups, for
+example methanogenesis by fungi and cyanobacteria, a function previously
+considered restricted to the Archaea [@bizic-ionescu2019, @lenhart2012].
 
-However, for microbes our knowledge of functional groups is much more limited.
-From a very limited number of cultured isolates we have a provisional
-understanding of which microbes might be involved in some ecosystem functions.
-And by sequencing the genomes of these isolates, we have identified genetic
-markers for certain functions. But most microbial taxa remain uncultured and we
-do not know the function of most microbial taxa detected in environmental
-samples [@hug2016] (@martiny2019 or @steen2019). In addition, there have been
-recent discoveries
-of functions in unexpected taxonomic groups, for example methanogenesis by
-fungi and cyanobacteria, a function previously considered restricted to the
-Archaea [@bizic-ionescu2019, @lenhart2012]. 
+As illustrated earlier, these functional markers are not correlated with their
+corresponding ecosystem function in most ecosystems and for most processes. In
+addition, they provide little explanatory power to models of ecosystem
+function. Because of this, it might be prudent to look more agnostically at
+microbial communities to identify taxa, groups of taxa or genes that are
+important for predicting the rates of ecosystem functions rather than assuming
+that the genetic markers we have provisionally identified for a given function
+represent the most likely taxa or genes involved. This agnostic approach is
+analogous to the approach of many genotype-phenotype mapping studies (e.g.,
+genome-wide association studies), which often look for associations between a
+phenotype and loci anywhere in the genome. 
 
-Beyond, for example, identifying previously undocumented methanotrophs that are
-related to methane oxidation, it's possible that more complex ecological
-regulatory patterns exist in microbial communities. In other words, it may not
-be methanotrophs limiting methanotrophy in a given ecosystem. Instead, the rate
-of methane flux to the atmosphere could be controlled by methanotrophs,
-methanogens, bacteria that produce the fermentative byproducts that methanogens
-depend on, nutrient cyclers that regulate the availability of nitrogen or
-phosporus, or even grazers and other predators or pathogens. The regulation of ecosystem function by microbial communities could be direct or indirect.
-
-Because of this, it would be
-prudent to look more agnostically at microbial communities to identify taxa or
-groups of taxa that are important for predicting the rate of ecosystem
-functions rather than assuming that the genetic markers we have provisionally
-identified for a given function represent the most likely taxa involved.  This
-agnostic approach is analogous to the approach of many genotype-phenotype
-mapping studies (e.g., genome-wide association studies or GWAS), which often
-look for associations between a phenotype and loci anywhere in a genome.
-
-### Dealing with multiple comparisons
-
-Microbial biodiversity-ecosystem function studies and genotype-phenotype
-mapping studies are both “many-to-one” mapping challenges, which involve large
-numbers of statistical tests.  Hundreds to thousands of tests are routinely
-made per study, greatly inflating the number of false positives identified
-using statistical hypothesis testing approaches.  Some microbial
-biodiversity-ecosystem function studies do not correct for this, while others
-use approaches that may unnecessarily inflate the false negative rate, such as
-the Bonferroni correction. The Bonferroni correction has been widely considered
-to be too conservative, particular for exploratory studies designed to generate
-hypotheses [@perneger1998, @rothman1990, @thomas1985]. Statisticians have
-developed a number of less-conservative approaches to correct for multiple
-comparisons by controlling the false discovery rate in order to balance the
-tradeoff between Type I and Type II errors [@benjamini1995, @storey2002].
-These approaches are commonly used in genotype-phenotype mapping studies.
+Beyond finding new physiologies in unexpected places, there are other reasons
+for looking agnostically. In the case of microbial functions, it may be that
+the organism that performs a function is not the limiting factor for the rate
+of that function. For example, the rate of soil-to-atmosphere methane flux
+could be limited by methanogens or methanotrophs or the balance of the two. It
+could also be limited by the bacteria that produce the fermentative byproducts
+that methanogens depend on. Or there could be indirect limitation by organisms
+that liberate nitrogen or phosphorus into mineral forms. In other words, the
+influence of microbial communities on the rate ecosystem function could
+represent a complex metabolic network much like the regulation of gene
+expression in organisms that partially determine their phenotype. These broader
+patterns of biodiversity-ecosystem function relationships would be invisible to
+any study that focuses on putative functional groups without considering the
+reads that underlie those functional groups.
 
 ### Controlling for population stratification
 
-Maybe introduce "uniquely associated" here.
-
 It is widely accepted that organisms, including microorganisms, exhibit
 population stratification due to geographic and environmental separation
-[@martiny2006, @wright1943]. Genome-wide association studies generally account
-for population structure due to shared ancestry among cases and controls when
-modeling the connection between genotype and phenotype. The classic example is
-the latitudinal gradient of both height and genotypic similarity in Europe,
-which results in spurious associations between human height and genetic
-variation [@berg2019, @novembre2008, @sohail2019]. Spurious associations arise
-because of heterogeneity in population structure where any genetic variant in a
-population with an extreme phenotype will tend to be associated with that
-phenotype whether it is related or not. To correct for this
-covariance structure, GWAS models incorporate genotypic similarity to correct
-for shared ancestry using a variety of methods. A common example is to correct
-for population structure by performing regression of the first one or more
-principal components of genotype on both genotype and phenotype. Then, the
-residuals from this model are used as the new genotype and phenotype with
-structure removed [@price2006]. Another approach, employed in our example, is
-variance component
-modeling (or mixed modeling, heirarchical modeling, etc.) where genotypic
-similarity is included as a covariate in the model as a random
-effect [@kang2010]. While these represent two common statistical approaches to
-control for population stratification, it is also considered good practice to
-select a study population that is relatively homogeneous when designing an
-experiment. Otherwise, even large, well-replicated GWAS studies can result in
-false positives, as recently revealed by two studies reversing conclusions from
-previous studies of the relationship between genetics and human height
-[@berg2019, @sohail2019]. 
+[@wright1943, @martiny2006]. This can lead to spurious associations between
+phenotypes and genetic markers that are at high frequency in isolated
+sub-populations. Association studies generally control for population
+stratification by accounting for shared ancestry among organisms in a
+population when modeling the connection between genotype and phenotype.
+Typically, microbial biodiversity-ecosystem function studies do not account for
+population stratification (i.e., community similarity among ecosystems),
+although there are some exceptions [@meyer2019, @qin2012, @lloyd-price2019].
+Community similarity (the community analogue of shared ancestry among
+organisms) is not as tightly linked to geography or environment as is shared
+ancestry, and it could be very useful to account for these separately in
+microbial studies, especially if one is particularly interested in how
+composition alters function independent of the underlying environmental
+variation.
 
-Typically, microbial biodiversity-ecosystem
-function studies do not account for population stratification (i.e., community
-similarity across samples), although there are some exceptions [@meyer2019,
-@qin2012]. Genome-wide association studies generally ignore the underlying
-environmental and spatial distance between samples and instead uses shared
-ancestry as a proxy for these variables.  However, community similarity (the
-community analogue of shared ancestry among organisms) is not as tightly linked
-to geography or environment as is shared ancestry among organisms, and it could
-be very useful to account for these separately in microbial studies, especially
-if one is particularly interested in how composition alters function
-independent of the underlying environmental variation. 
+Genome-wide association studies correct for stratification using a variety of
+methods. Generally, they ignore the underlying environmental and spatial
+distance between samples and instead use shared ancestry as a proxy for local
+selection and assortative mating. A common approach is to perform a regression
+of phenotype and shared ancestry (computed as the first one or more principal
+components of the genotype matrix) and then use the residuals from this model
+as the values for phenotype in a subsequent regression using the genotypes
+directly [@price2006]. This principal component correction is designed to test the
+effect of individual genes after removing the effect of shared ancestry among
+individuals. Another approach, employed in our example, is variance component
+modeling (or mixed modeling, hierarchical modeling, etc.) where genotypic
+similarity is included as a covariate in the model to control for
+stratification while testing the genotype-phenotype connection [@kang2010].
+
+If we control for covariates such as community similarity, geographic distance,
+or environmental similarity, it changes the nature of our question. For
+example, if we test the correlation between the relative abundance of a taxon
+and the rate of methane flux we are asking “is this taxon correlated with
+methane flux?” If we find a significant result, that may be because variation
+in the abundance of that organism directly or indirectly contributes to methane
+flux. However, it might also be that that organism lives only in ecosystems
+that happen to have a high rate of ecosystem function. We would not be able to
+distinguish these outcomes with this simple correlation. If we then include
+environmental variables or environmental similarity as a covariate, we could
+start to ask, “Is the taxon uniquely associated with function independent of
+the environment?” By “uniquely associated”, we mean those taxa associated with
+function irrespective of environmental conditions, local community structure,
+or spatial proximity. This is not only a more specific question than is usually
+asked in microbial biodiversity-ecosystem function studies, but it is also a
+more appropriate one, especially if one is interested in how to incorporate
+microbial community data into ecosystem models. Finally, it is interesting on
+its own to understand whether microbial communities are selected by the
+underlying environmental conditions to produce a particular rate of ecosystem
+function (the conduit) or whether there is variation in community composition
+independent of the environment that explains some variation in ecosystem
+function.
 
 ## An example: high-affinity methane oxidation
 
-To illustrate the ideas outlined above, we reanalyzed a subset previously
-published data [@meyer2019] using a modified procedure from the original
-version.  A full description of the study design, samples, and data generation
-can be found in that manuscript. Briefly, these data were gathered from intact
-soil cores taken from diverse ecosystems of the Congo Basin in Gabon, Africa.
-Cores were incubated in the laboratory under different concentrations of
-methane to identify the rates of specific methane cycling pathways. For this
-example, we will analyze data from just one of these pathways, high-affinity
-methane oxidation (the oxidation of atmospheric concentrations of methane),
-which we will refer to below as “methane oxidation”. In addition, for
-simplicity we only include amplicon sequences from the DNA-inferred community
-and not the RNA-inferred community, both of which are presented in the original
-paper [@meyer2019].  The data we analyzed include methane oxidation
-measurements, amplicon sequence variants (ASVs; @callahan2017) generated using
-DADA2 and inferred from 16S rRNA gene sequences, pmoA abundance estimates (via
-qPCR), latitude and longitude, and four environmental covariates (soil
-moisture, bulk density, carbon, and nitrogen).
+To illustrate the ideas outlined above, we reanalyzed a subset of previously
+published data from a paper that has demonstrated one successful approach
+for applying genotype-phenotype mapping to microbial communities [@meyer2019]. In our
+reanalysis, we do not intend to challenge the conclusions from that paper, but
+instead we want to demonstrate how to perform this type of study for microbial
+ecologists unfamiliar with association studies. A full description of the study
+design, samples, and data generation can be found in that manuscript. Briefly,
+these data were gathered from intact soil cores taken from diverse ecosystems
+of the Congo Basin in Gabon, Africa. Cores were incubated in the laboratory
+under different concentrations of methane to identify the rates of specific
+methane cycling pathways. For this example, we will analyze data from just one
+of these pathways, high-affinity methane oxidation (the oxidation of
+atmospheric concentrations of methane), which we will refer to simply as
+“methane oxidation”. In addition, we only include amplicon sequences from the
+DNA-inferred community and not the RNA-inferred community, both of which are
+presented in the original paper (@meyer2019). The data we analyzed include methane
+oxidation rates, amplicon sequence variants (ASVs; @callahan2017) generated using DADA2
+and inferred from 16S rRNA gene sequences, _pmoA_ abundance estimates (via qPCR),
+latitude and longitude, and four environmental covariates (soil moisture, bulk
+density, carbon, and nitrogen).
 
 Analyses were conducted in the R statistical environment using the phyloseq
-package [@mcmurdie2013, @rcoreteam2019].  The relative abundances of ASVs were
-corrected using the variance stabilizing transformation from DESeq2 [@love2014,
-@mcmurdie2014]. We first test typical measures of microbial structure including
-functional gene abundance and community richness, which was estimated using the
-breakaway package [@willis2015]. We then demonstrate significant covariation
-between community structure (estimated as Bray-Curtis distance using vegan),
-environmental variation (euclidean distance), and geographic distance
-(euclidean distance) using Mantel tests [@bray1957, @oksanen2019].  Finally, we
+package [@mcmurdie2013, @rcoreteam2019]. The relative abundances of ASVs were corrected using the variance
+stabilizing transformation from DESeq2 [@love2014,
+@mcmurdie2014]. We first test typical measures of
+microbial structure including functional gene abundance and community richness,
+which was estimated using the breakaway package [@willis2015]. We then demonstrate
+significant covariation between community structure (estimated as Bray-Curtis
+distance using vegan), environmental variation (euclidean distance), and
+geographic distance (euclidean distance) using Mantel tests [@bray1957, @oksanen2019]. Finally, we
 present one approach to identifying taxa which are significantly associated
 with function independent of the environment by fitting variance component
 models using varComp to test the relationship between relative abundance of
-each ASV and methane oxidation rate [@qu2013]. To illustrate how including
-different covariates (environmental, geographic, and community) can result in
-different conclusions about which taxa are associated with function, we fit
-this model with and without random effects variance components for
-environmental similarity, geographic site ID, and Bray-Curtis similarity.
-Significant taxa were determined by controlling the false discovery rate at
-q-value < 0.05 [@storey2002]. Figures were created using ggplot2
-[@wickham2019].
+each ASV and methane oxidation rate [@kang2010, @qu2013]. To illustrate how
+including different
+covariates (environmental, geographic, and community) can result in different
+conclusions about which taxa are associated with function, we fit this model
+with and without random effects variance components for environmental
+similarity, geographic site ID, and Bray-Curtis similarity. Significant taxa
+were determined by controlling the false discovery rate at q-value < 0.05 [@storey2002].
+Figures were created using ggplot2 [@wickham2019].
 
-## Results & Discussion
+### Results & Discussion
 
-Methane oxidation rate was not significantly correlated with the abundance of
-methanotrophs (inferred from _pmoA_ gene
-abundance) or 16S read richness (Table 1, Figure 1). We tested collinearity between each
-pair of distance matrices for community, environment, and geography using
-Mantel tests and estimated p-values by permutation. We found a moderate and
-significant correlation between community composition and environmental
-variation, geography and community composition, and geography and environmental
-variation (Table 2, Figure 2). Principal coordinate plots show that beta
-diversity of samples separated by site ID and by ecosystem type (wetland or
-upland; Figure 2). This indicates substantial spatial and environmental
-structure for microbial populations which should be controlled for to
-rigorously identify associations between taxa and function. Finally, we tested
-the effect of the relative abundance of
-each ASV on methane oxidation rate. We found different numbers of taxa
-significantly associated with methane oxidation depending on which covariates
-were included in the model (Table 3). After correcting for the false discovery
-rate, 460 unique 16S reads were identified as significantly correlated with function.
-In the model that controlled for community structure using all three covariates
-(community, environment, and geography), only 6 of these reads were found to be
-significiantly correlated with methane oxidation rate.
-Though we cannot infer function from 16S sequences, these 6 taxa fall into
-three genera and one class with cultured representatives that are not known to
-consume methane [@belova2009, @chang2011, @domeignoz-horta2019, @fritz2004].
-Their effect on methane oxidation rate ranges from 0.5 to 1.5 (Figure 3). (The
-slope of the relationship between relative abundance and methane oxidation
-rate.) An
-effect of 1.5 means that for a one unit increase in relative abundance there is
-a 1.5 increase in k (the rate of exponential decrease in methane concentration
-over time). 
+Microbial biodiversity-ecosystem function studies typically test functional
+group abundance or community richness as it relates to ecosystem function. In
+our case, methane oxidation rate was not significantly correlated with the pmoA
+gene abundance or 16S read richness (Table 1, Figure 1). To demonstrate that
+the covariance structure of the data might alter our conclusions about which
+taxa regulate ecosystem function, we tested collinearity between each pair of
+distance matrices for community, environment, and geography. We found a
+moderate and significant correlation between community composition and
+environmental variation, geography and community composition, and geography and
+environmental variation (Table 2, Figure 2). To visualize this population
+stratification, principal coordinate plots show that beta diversity of samples
+separated by site ID and by ecosystem type (wetland or upland; Figure 2), which
+indicates substantial spatial and environmental structuring of microbial
+populations. This means that the presence or abundance of certain genetic
+markers (taxa) will be elevated in specific ecosystems. In this case,
+high-affinity methane oxidation is typically greater in upland ecosystems than
+in wetland ecosystems and so any taxa differentially abundant in uplands will
+be correlated with methane oxidation regardless of their involvement in that
+process. It is necessary to control for this structuring to rigorously identify
+associations between taxa and function. 
 
-In this paper, we argue that the traditional approach to microbial
-biodiversity-ecosystem function research often ignores the complexity of
-microbial community dynamics, in particular the complex patterns of covariation
-that often arise among microbial community similarity, environmental
-similarity, and spatial proximity.  We propose that a better approach would be
-to learn from other complex many-to-one mapping problems in biology,
-particularly genotype-phenotype mapping.  These studies often explicitly
-account for covariation, they correct for multiple comparisons in powerful
-ways, and they frequently take an “agnostic approach” that does not assume a
-particular relationship between structure and function.
-
-We illustrate the potential for these approaches to elucidate microbial
-biodiversity-ecosystem function relationships by analyzing a subset of
-published data from incubations of tropical soil.  In this example, soil cores
-from different ecosystems exhibited different rates of methane oxidation, but
-simple correlations between these rates and the diversity or abundance of
-putative methane oxidizing bacteria were not informative.  These results agree
-with recent reviews of the literature that demonstrate that such simple
-approaches are often not a fruitful avenue for elucidating microbial
-structure-function connections.
-
-[redundant with the former results section]
-
-We then asked if the relative abundance of particular taxa were related to
-ecosystem function, and we identified 460 taxa whose relative abundances were
-associated with rates of methane oxidation after controlling the false
-discovery rate (q-value < 0.05).  These taxa could be related to ecosystem
-function in multiple ways.  The most interesting possibility is that each of
-these taxa is statistically related because it is causally connected to the
-function. This could be direct, for example an organism that consumes methane,
-or indirect, for example an organism that regulates substrates necessary for
-consumers of methane. In either of these cases, the taxon could be useful as a
-biomarker of function or as an organism to investigate in order to better
+To demonstrate this approach, we tested the effect of the relative abundance of
+each ASV on methane oxidation rate while controlling for different sets of
+covariates including environment, geography, and community. After controlling
+the false discovery rate, 460 unique 16S reads were identified as significantly
+correlated with function when no covariates were included in the model. We
+found different numbers of taxa significantly associated with methane oxidation
+depending on which covariates were included in the model (Table 3). Each of
+these sets of taxa represent different versions of the biodiversity-ecosystem
+function mapping question. For example, controlling for environmental variation
+tests for taxa that are related to function independent of environmental
+conditions. Similarly, controlling for geographic distance tests for taxa that
+are related to function independent of geographic proximity; geographic
+proximity could influence function via unmeasured environmental variation that
+is spatially structured or differences in dispersal history among sites due to
+physical distance. In the model that controlled for all three covariates
+(community, environment, and geography), only six ASVs were significantly
+correlated with methane oxidation rate (Figure 3). These taxa could be useful
+indicators for methane oxidation rate across space and different ecosystems. In
+addition, researchers could manipulate their abundance in order to better
 understand the biological drivers of variation in methane oxidation.
 
-Alternatively, a significant association could occur for non-causal reasons.
-For example, any organism that tends to be in high abundance where methane
-oxidation rates are high would be correlated with methane oxidation, even if it
-has no causal relationship. This could be because such an organism is favored
-under the same environmental conditions that favor methane oxidizing bacteria
-(or that favor methane oxidation in general).  Such covariation can drive
-associations that are not causal, but the effects of such covariation can be
-reduced through a number of approaches (many developed by biologists interested
-in genotype-phenotype mapping).
-
-In our example, we showed that the abundances of microbial taxa exhibit complex
-patterns of covariation with each other and with environmental conditions and
-spatial location. These biogeographic patterns might be even stronger if we
-could sample the populations more intensively [@meyer2018]. Once we account for this
-covariation, our list of taxa associated with function was reduced to 6.  These
-6 taxa include taxa that are not known to directly contribute to methane
-oxidation, suggesting that the drivers of methane oxidation may be indirect,
-perhaps mediated by ecological interactions among taxa from multiple functional
-groups.
+Notably, these six taxa fall into three genera and one class with cultured
+representatives that are not known to consume methane [@belova2009, @chang2011,
+@domeignoz-horta2019, @fritz2004]. These taxa could be
+related to ecosystem function in multiple ways. The most interesting
+possibility is that each of these taxa is statistically related because it is
+causally connected to the function. This could be direct, for example an
+organism that consumes methane, or indirect, for example an organism that
+regulates substrates necessary for methane oxidizers. Alternatively, a
+significant association could occur for non-causal reasons. For example, any
+organism that tends to be in high abundance where methane oxidation rates are
+high would be correlated with methane oxidation, even if it has no causal
+relationship. This could be because such an organism is favored under the same
+conditions that favor methane oxidation. Such covariation can
+drive associations that are not causal, but the effects of covariation would
+have been reduced by controlling for covariates in our tests.
 
 This approach is powerful because it accounts for the covariances that arise
 from the fundamental ecological processes that drive community assembly and
-underlie biogeographical patterns [@martiny2006, @vellend2010]. It is also powerful because it is
+underlie biogeographical patterns [@martiny2006, @vellend2010]. It is also
+powerful because it is
 focused on a much more specific version of the “biodiversity-ecosystem
 function” question, i.e., it asks “which taxa are uniquely associated with
 function?” By “uniquely associated,” we mean those taxa associated with
 function irrespective of environmental conditions, local community structure,
-or spatial proximity.  This is not only a more specific question than is
-usually asked in microbial biodiversity-ecosystem function studies, but it is
-also a more appropriate one, especially if one is interested in how to
-incorporate microbial community data into ecosystem models. These models depend
-on identifying taxa that add explanatory power
-beyond that provided by other factors, such as environmental conditions.
+or spatial proximity. This is not only a more specific question than is usually
+asked in microbial biodiversity-ecosystem function studies, but it is also a
+more appropriate one, especially if one is interested in how to incorporate
+microbial community data into ecosystem models. These models depend on
+identifying taxa that add explanatory power beyond that provided by other
+factors, such as environmental conditions. Earth system models would benefit
+most from microbial bioindicators that capture variation unexplained by other,
+more easily measured variables (such as certain environmental conditions). The
+approach we describe is an important step toward identifying such biomarkers.
 
-We identified three insights from genotype-phenotype mapping that could be
-useful for microbial biodiversity-ecosystem function studies: the concept of
-“agnostic” mapping, the use of more powerful ways to account for multiple
-comparisons, and the incorporation of covariates.  But there are other insights
-to be gained as well.  For example, some phenotypes (e.g., the propensity for
-diseases such as Parkinson's) are controlled by a single genetic locus [@kerem1989, @macdonald1992].
-However, most phenotypes studied to date arise from the influence of many loci
-of small effect (as well as environmental factors; [@hindorff2009, reich2001]). Organismal
-biologists have developed approaches tailored to identifying such loci; for
-example, by sampling organismal populations in a way that constrains genetic
-variation unrelated to phenotype. Similarly, for some ecosystem functions, it
-is possible that a single microbial taxon could substantially influence its
-rate. For example, methane flux from permafrost in Sweden may be controlled by
-a single taxon [@mccalley2014]. However, most microbially mediated ecosystem functions are
-likely the result of interactions (direct and indirect) among many taxa.  We
-could maximize our ability to identify taxa of small effect by constraining
-variation, e.g., by sampling microbial communities in a way that makes them
-similar in structure (similar ecosystem, soil type, and abiotic conditions)
-while still varying in function.
+## Caveats and future directions
 
-Ultimately, the relationships identified in genotype-phenotype mapping studies
-must be verified.  There are multiple ways that this verification is
+Once taxa have been identified with an association test (such as the one we
+outline above), there are multiple ways they could be used for future study.
+One approach common in genetics, particularly for markers of genetic disorders,
+is to generate a polygenic score based on the summed effect of many genes on a
+phenotype of interest, such as the probability of developing a disorder. A
+similar aggregate bioindicator could be generated for ecosystems that would
+summarize the probability of having a particular ecosystem function or rate.
+This would be accomplished by measuring the abundance of the taxa identified in
+an association study and determining their association with the rate of an
+ecosystem function. Alternatively, the identified taxa could be incorporated
+into a structural equation model in an attempt to better understand the
+individual effects and interactions among taxa as they contribute to the rate
+of ecosystem function. This might give an indication of the relative importance
+of different taxa as compared to other factors, such as environmental
+variables.
+
+Ultimately, the relationships identified in any comparative mapping study
+must be verified. For genotype-phenotype studies in organisms there are
+multiple ways that this verification is
 accomplished. In some cases, organisms can be artificially selected for a
 particular phenotype (e.g., through experimental evolution in an environment
 that favors the phenotype of interest) and the genetic changes that occur in
 response to selection can be compared to those identified via mapping studies
-(such as GWAS).  An analogous approach for microbial biodiversity-ecosystem
+(such as GWAS). An analogous approach for microbial biodiversity-ecosystem
 function studies would be to apply artificial ecosystem selection (sensu @swenson2000)
 on a given function and compare the taxa that change in response to selection
 with those identified via a comparative approach (such as the one illustrated
 in our example).
 
-The most common way that loci identified in a mapping study are verified is
-through manipulative genetics.  The identified loci can be knocked out or
-over-expressed, and the effect on phenotype compared to that predicted from
-mapping studies.  There is no direct analogue for this in microbial
-biodiversity-ecosystem function studies.  In some cases it may be possible to
-inhibit a particular functional group through the use of a specific
-antimicrobial or a chemical inhibitor [@maxson2016], but this is not generally true.  It
-may be possible in some cases to isolate a microorganism of interest in pure
-culture and add it back to a particular ecosystem, transiently increasing its
-abundance (roughly analogous to “overexpressing” a gene).  Synthetic
-communities (contrived assemblages of microorganisms) may ultimately be the
-most powerful way to test hypotheses about microbial biodiversity-ecosystem
-function relationships, but currently these approaches are limited by the small
-number of taxa that can be routinely cultured from most environments.
+The most common way that loci identified in a genotype-phenotype mapping study are verified is
+through manipulative genetics. The identified loci can be knocked out or
+over-expressed and the effect on phenotype compared to that predicted from
+mapping studies. In the case of microbial biodiversity studies, it may be
+possible to inhibit a particular functional group through the use of a specific
+antimicrobial or a chemical inhibitor or by using phages with high
+host-specificity [@maxson2016], but this is not generally possible. In some cases, we
+may be able to isolate a microorganism of interest in pure culture and add it
+back to an ecosystem, transiently increasing its abundance (roughly analogous
+to “overexpressing” a gene). A greater focus on culture-based approaches could
+increase the success of these kinds of microbial enrichments. Finally,
+synthetic communities (contrived assemblages of microorganisms) may be the most
+powerful way to test hypotheses about microbial biodiversity-ecosystem function
+relationships, but currently these approaches are limited by the small number
+of taxa that can be routinely cultured from most environments.
+
+There are a number of limitations to the biodiversity-ecosystem function
+mapping approach we describe, some in common with organismal mapping studies
+and others unique. For example,
+simple linear models such as the variance component model used in this study
+are typical for genetics studies, but may not be the best way to identify
+correlations for microbiomes due to the unique challenges of microbial data.
+These are zero-inflated compositional data with differences in sequencing
+depth across samples. We have addressed these challenges by using a variance
+stabilizing transformation, but other models that test differential
+abundance and differential variance that can control for differences in
+sequencing depth and are robust to zero-inflation might be more appropriate
+(e.g., CORNCOB @martin2019).  Alternatively, clustering reads at higher
+taxonomic levels could provide a more continuous variation in taxon abundances
+across ecosystems by reducing the number of “bins.” The tradeoff for this is
+that it introduces bias based on the completeness of our taxonomic databases
+and the accuracy of 16S-based taxonomic assignment and it removes reads that
+lack a taxonomic assignment. Here, we chose to test ASVs at the level of the
+individual read so as not to bias our results by losing reads that lack a
+taxonomic assignment at a particular level.
+
+Experimentally, future studies could improve on our example by sampling a more
+homogeneous set of ecosystems. Our survey includes grasslands, pastures,
+forests, peatlands, and mineral soil wetlands among others. These ecosystems
+represent a range of moisture conditions that could regulate the abundance and
+activity of methane oxidizers and access to methane and oxygen, which methane
+oxidizers rely on. While this captured substantial variation in methane
+oxidation rates, sampling from such diverse ecosystems could result in spurious
+associations between taxa and function. For example, taxa differentially
+abundant in upland ecosystems that are unrelated to methane oxidation might
+appear correlated simply due to their presence in those ecosystems with high
+oxidation rates. Future studies could try restricting their search to a more
+homogeneous population of ecosystems specific to the question at hand.
 
 ## Conclusion
 
-Microbial biodiversity-ecosystem function research has demonstrated that
-functional group abundance (measured by qPCR of functional genes) is often not
-a good predictor of ecosystem function and that microbial
-diversity metrics on average do not add much power to ecosystem models.  A new
-perspective on how to determine the relationship between microbial communities
-and ecosystem functions is sorely needed.  Organismal biologists have over a
-hundred years of experience identifying relationships between complex sets of
-highly-variable data (genotypes or genome sequences) and aggregate functions
-(organismal phenotypes).  We assert that combining the approaches of
-traditional biodiversity-ecosystem function research with ideas from
-genotype-phenotype mapping could provide this new perspective.  This
-integration could not only make underutilized approaches such as covariate
-modeling and artificial selection more available to microbial ecologists, but
-also provide instructive examples of how best to conceive of microbial
-biodiversity-ecosystem function questions.  If this integration is successful,
-it is possible that in the not-so-distant future our field will be able to
-robustly identify taxa, genes, or even molecules that will allow us to
-accurately predict the response of ecosystems to environmental change. Doing so
-will not only generate novel hypotheses about how complex microbial communities
-drive ecosystem function, but also help scientists predict and manage changes
-to ecosystem functions resulting from human activities. 
+Microbial biodiversity-ecosystem function research has demonstrated positive
+correlations between diversity and ecosystem function. However, the abundances
+of microbial functional groups (as currently defined) are often not good
+predictors of ecosystem function and commonly do not add substantial
+explanatory power to ecosystem models. Therefore, a new perspective on how to
+determine the relationship between microbial communities and ecosystem
+functions is sorely needed. Organismal biologists have over a hundred years of
+experience identifying relationships between complex sets of highly-variable
+data (genotypes or genome sequences) and aggregate functions (organismal
+phenotypes). We assert that combining the approaches of traditional
+biodiversity-ecosystem function research with ideas from genotype-phenotype
+mapping could provide this new perspective. This integration could not only
+make underutilized approaches such as covariate modeling and artificial
+selection more available to microbial ecologists, but also provide instructive
+examples of how best to conceive of microbial biodiversity-ecosystem function
+questions. If this integration is successful, it is possible that in the
+not-so-distant future our field will be able to robustly identify taxa, genes,
+or even molecules that will allow us to accurately predict the response of
+ecosystems to environmental change. Doing so will not only generate novel
+hypotheses about how complex microbial communities drive ecosystem function,
+but also help scientists predict and manage changes to ecosystem functions
+resulting from human activities.
 
 # Acknowledgments
 
@@ -811,8 +505,8 @@ and the assistance of F. Bivigou, H. Memiaghe, L. Tchignoumba, E.  Tobi, and I.
 Akendengue. The University of Oregon, the Gabon-Oregon Transnational Center on
 Environment and Development, the Smithsonian Conservation Biology Institute,
 and Shell Gabon provided financial and logistical support for the original
-study re-analyzed here. We also thank W. Cresko for insightful discussions on
-population genetics and H.  Tavalire for contributions to the statistical
+study re-analyzed here. We also thank W. Cresko for insightful discussions regarding
+population genetics and H. Tavalire for contributions to the statistical
 analyses. 
 
 # References
