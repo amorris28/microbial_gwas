@@ -1,23 +1,25 @@
 # Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms
 This is the project directory for the Royal Society paper. All intermediate
-data files (in `output/`) and all figures (in `figures\`) have been
+data files (in `output/`) and all figures (in `figures/`) have been
 created so the final script `7_analysis.R` can be run immediately to recreate
-figures and results. Otherwise, run scripts in order of numberingt to recreate
+figures and results. Otherwise, run scripts in order of numbering to recreate
 the output.
 
 ## How to cite this manuscript:
 
-Morris AH, Meyer KM, Bohannan BJM (2019) Linking microbial communities
-to ecosystem functions: what we can learn from genotype-phenotype mapping
-in organisms 
+Morris Andrew, Meyer Kyle and Bohannan Brendan 2020Linking microbial communities
+to ecosystem functions: what we can learn from genotype–phenotype mapping in
+organisms. [Phil. Trans. R. Soc.
+B](https://royalsocietypublishing.org/journal/rstb) 375:20190244.
+[https://doi.org/10.1098/rstb.2019.0244](https://doi.org/10.1098/rstb.2019.0244)
 
 ## Data are from:
 
-Meyer KM, Hopple AM, Klein A, Morris AH, Bridgham
-SD, Bohannan BJM (2019) Community structure – ecosystem function
-relationships in the Congo Basin methane cycle depend on the physiological
-scale of function. 
-[bioRxiv](https://www.biorxiv.org/) doi:[10.1101/639989](https://doi.org/10.1101/639989)
+Meyer, KM, Hopple, AM, Klein, AM, Morris, AH, Bridgham, SD, Bohannan, BJM.
+Community structure – Ecosystem function relationships in the Congo Basin
+methane cycle depend on the physiological scale of function. [Mol Ecol.](https://onlinelibrary.wiley.com/journal/1365294x) 2020; 29:
+1806– 1819.
+[https://doi.org/10.1111/mec.15442](https://doi.org/10.1111/mec.15442)
 
 
 ## Data
@@ -34,8 +36,7 @@ scale of function.
 
 ## Scripts
 
-### R
-`R/` directory contains `R` scripts that run.
+### R/
 
 `0_setup.R` has code to install all required packages. May need to modify to
 address your local dependencies.
