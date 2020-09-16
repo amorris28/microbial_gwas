@@ -7,7 +7,7 @@ the output.
 
 ## How to cite this manuscript:
 
-Morris Andrew, Meyer Kyle, and Bohannan Brendan 2020. Linking microbial
+Morris, Andrew, Meyer, Kyle, and Bohannan, Brendan 2020. Linking microbial
 communities to ecosystem functions: what we can learn from genotype–phenotype
 mapping in organisms. [Phil. Trans. R. Soc.
 B](https://royalsocietypublishing.org/journal/rstb) 375:20190244.
