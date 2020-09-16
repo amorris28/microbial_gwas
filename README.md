@@ -1,5 +1,5 @@
 # Linking microbial communities to ecosystem functions: what we can learn from genotype-phenotype mapping in organisms
-This is the project directory for the Royal Society paper. All intermediate
+This is the project directory for the Royal Society paper cited below. All intermediate
 data files (in `output/`) and all figures (in `figures/`) have been
 created so the final script `7_analysis.R` can be run immediately to recreate
 figures and results. Otherwise, run scripts in order of numbering to recreate
@@ -7,9 +7,9 @@ the output.
 
 ## How to cite this manuscript:
 
-Morris Andrew, Meyer Kyle and Bohannan Brendan 2020Linking microbial communities
-to ecosystem functions: what we can learn from genotype–phenotype mapping in
-organisms. [Phil. Trans. R. Soc.
+Morris Andrew, Meyer Kyle, and Bohannan Brendan 2020. Linking microbial
+communities to ecosystem functions: what we can learn from genotype–phenotype
+mapping in organisms. [Phil. Trans. R. Soc.
 B](https://royalsocietypublishing.org/journal/rstb) 375:20190244.
 [https://doi.org/10.1098/rstb.2019.0244](https://doi.org/10.1098/rstb.2019.0244)
 
