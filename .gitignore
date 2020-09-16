@@ -12,8 +12,6 @@
 *.nav
 *.snm
 *.toc
-output/
-figures/
 *.RData
 *.Rhistory
 .deps
@@ -21,7 +19,6 @@ figures/
 tables/
 R/Figs/
 *.html
-talapas-output/
 manuscript/manuscript.docx
 manuscript/240719Royal_Society_Paper_BJMB.docx
 *.docx

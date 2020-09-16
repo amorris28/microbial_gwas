@@ -1,0 +1,4 @@
+"Terms" "mantel" "quantile" "p.value"
+"1" "Community ~ Geography" 0.352878752689857 0.0557 0.001
+"2" "Community ~ Environment" 0.474135329195274 0.1086 0.001
+"3" "Geography ~ Environment" 0.241018490105631 0.0554 0.001

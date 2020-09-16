@@ -1,0 +1,9 @@
+"comps" "removed" "added" "n_sig"
+"1" "None" 0 0 460
+"2" "Geo" 338 21 143
+"3" "Com" 460 0 0
+"4" "Env" 281 1 180
+"5" "Geo + Com" 458 0 2
+"6" "Geo + Env" 377 13 96
+"7" "Com + Env" 447 0 13
+"8" "Geo + Com + Env" 454 0 6
