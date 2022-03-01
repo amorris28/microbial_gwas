@@ -32,7 +32,7 @@ methane cycle depend on the physiological scale of function. [Mol Ecol.](https:/
 
 `figures/` contains figures output from scripts
 
-`R/` Contains scripts that run plus helper functions
+`R/` contains scripts that run plus helper functions
 
 ## Scripts
 
@@ -43,7 +43,7 @@ address your local dependencies.
 
 `1_clean_sample_data.R` takes in the raw sample date file and munges it for analysis.
 
-`2_clean_asvs.R` takes in the raw ASV table and munges it for analysis including
+`2_clean_asvs.R` takes in the raw ASV table and munges it for analysis.
 
 `3_geodist_processing.R` takes in the raw GPS data and converts it to meters using
 UTM.
@@ -60,5 +60,5 @@ data. This is typically submitted to the cluster and the output from the cluster
 `7_analysis.R` is the primary file that presents the results and creates the
 figures and tables.
 
-`functions.R` contains holds the user-made functions specific to this project.
+`functions.R` contains the user-made functions specific to this project.
 
