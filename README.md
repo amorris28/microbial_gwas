@@ -62,3 +62,6 @@ figures and tables.
 
 `functions.R` contains the user-made functions specific to this project.
 
+## License
+
+Software and code licensed under the [MIT license](https://github.com/amorris28/microbial_gwas/blob/main/LICENSE.md). Does not include datasets under `raw_data/`.
